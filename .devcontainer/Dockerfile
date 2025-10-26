@@ -43,6 +43,9 @@ RUN npm install -g expo-cli eas-cli
 # Firebase CLIのインストール
 RUN npm install -g firebase-tools
 
+# Claude Code CLIのインストール
+RUN npm install -g @anthropic-ai/claude-code
+
 # Google Cloud SDKのインストール（オプション）
 RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | \
     tee -a /etc/apt/sources.list.d/google-cloud-sdk.list \
