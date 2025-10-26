@@ -115,8 +115,14 @@
     "ghcr.io/devcontainers/features/github-cli:1": {}
   },
 
-  // ホストのClaude Code設定をマウント
+  // ホストのClaude Code設定とSSH認証情報をマウント
   "mounts": [
-    "source=${localEnv:HOME}/.claude,target=/home/vscode/.claude,type=bind,consistency=cached"
-  ]
+    "source=${localEnv:HOME}/.claude,target=/home/vscode/.claude,type=bind,consistency=cached",
+    "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh-localhost,type=bind,readonly"
+  ],
+
+  // SSH agent forwarding
+  "remoteEnv": {
+    "SSH_AUTH_SOCK": "${localEnv:SSH_AUTH_SOCK}"
+  }
 }
