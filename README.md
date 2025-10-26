@@ -473,13 +473,12 @@ BUBBLEは、**健全な境界線を保ちながら、大切な人とのつなが
 
 ```
 BUBBLE/
-├── backend/              # FastAPI バックエンド
-├── mobile/               # React Native モバイルアプリ
-├── web/                  # Next.js Webアプリ
-├── shared/               # 共通コード（型定義等）
-├── firebase/             # Firebaseセキュリティルール
-├── docs/                 # ドキュメント
-└── docker-compose.yml    # ローカル開発環境
+├── backend/              # FastAPI バックエンド（Python 3.11+）
+├── mobile/               # React Native モバイルアプリ（Expo）
+├── web/                  # Next.js Webアプリ（管理画面）
+├── shared/               # 共通コード（型定義、定数など）
+├── firebase/             # Firebaseセキュリティルールと設定
+└── docs/                 # プロジェクトドキュメント
 ```
 
 詳細なディレクトリ構成は各フォルダのREADMEを参照してください。
@@ -489,10 +488,10 @@ BUBBLE/
 ## 🚀 クイックスタート
 
 ### 前提条件
-- Node.js 18以上
-- Python 3.11以上
-- uv (Pythonパッケージマネージャー)
-- Firebase プロジェクト
+- **Node.js 18以上**: [公式サイト](https://nodejs.org/)からインストール
+- **Python 3.11以上**: [公式サイト](https://www.python.org/)からインストール
+- **uv (Pythonパッケージマネージャー)**: `curl -LsSf https://astral.sh/uv/install.sh | sh`
+- **Firebase プロジェクト**: [Firebase Console](https://console.firebase.google.com/)で作成
 
 ### 1. リポジトリのクローン
 
@@ -501,40 +500,92 @@ git clone https://github.com/yourusername/bubble.git
 cd bubble
 ```
 
-### 2. バックエンドのセットアップ
+### 2. Firebase認証情報の設定
+
+1. Firebase Consoleでサービスアカウントキーを生成
+2. JSONファイルを `backend/serviceAccountKey.json` として保存
+3. プロジェクトIDをメモしておく
+
+### 3. バックエンドのセットアップ
 
 ```bash
 cd backend
+
+# 依存関係のインストール
 uv sync
+
+# 環境変数ファイルの作成
 cp .env.example .env
-# .envファイルを編集してFirebase認証情報を設定
+
+# .envファイルを編集（必須項目）
+# - FIREBASE_PROJECT_ID: FirebaseプロジェクトID
+# - FIREBASE_CREDENTIALS_PATH: ./serviceAccountKey.json
+# - SECRET_KEY: ランダムな文字列（例: openssl rand -hex 32）
+# - ENCRYPTION_KEY: ランダムな文字列（例: openssl rand -hex 32）
+
+# 開発サーバー起動（ポート8000）
 uv run uvicorn app.main:app --reload
 ```
 
-### 3. モバイルアプリのセットアップ
+### 4. モバイルアプリのセットアップ
 
 ```bash
 cd mobile
+
+# 依存関係のインストール
 npm install
+
+# 環境変数ファイルの作成
 cp .env.example .env
-# .envファイルを編集
+
+# .envファイルを編集してFirebase設定とAPIエンドポイントを設定
+
+# Expo開発サーバー起動
 npm start
 ```
 
-### 4. Webアプリのセットアップ
+### 5. Webアプリのセットアップ（オプション）
 
 ```bash
 cd web
+
+# 依存関係のインストール
 npm install
+
+# 環境変数ファイルの作成
 cp .env.example .env.local
+
 # .env.localファイルを編集
+
+# 開発サーバー起動（ポート3000）
 npm run dev
 ```
 
-### 5. Dockerでの起動（オプション）
+### 6. トラブルシューティング
 
+**uvが見つからない場合:**
 ```bash
-docker-compose up
+# macOS/Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+**Pythonバージョンが古い場合:**
+```bash
+# macOS (Homebrew)
+brew install python@3.11
+
+# Ubuntu/Debian
+sudo apt update && sudo apt install python3.11
+```
+
+**Node.jsバージョンが古い場合:**
+```bash
+# nvm (推奨)
+nvm install 18
+nvm use 18
 ```
 
 ---
