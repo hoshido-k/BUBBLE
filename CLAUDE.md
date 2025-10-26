@@ -20,8 +20,7 @@ BUBBLE/
 ├── mobile/               # React Native mobile app (Expo)
 ├── web/                  # Next.js 14 web admin interface
 ├── shared/               # Shared TypeScript types and constants
-├── firebase/             # Firebase security rules and config
-└── .devcontainer/        # Dev Container configuration
+└── firebase/             # Firebase security rules and config
 ```
 
 ## Development Commands
@@ -197,22 +196,46 @@ DEBUG=False
 
 ## Development Environment
 
-### Dev Container Setup
-This project uses VS Code Dev Containers with Docker Compose:
+### Local Development Setup
+This project is designed for local development with the following prerequisites:
 
-1. The main dev container (`app` service) provides the development environment
-2. The `backend` service runs independently with exposed ports
-3. Ports forwarded: 8000 (backend), 3000 (web), 19000-19002 (Expo)
+**Required Tools:**
+- **Python 3.11+**: Backend runtime
+- **Node.js 18+**: Frontend/mobile runtime
+- **uv**: Python package manager (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
+- **npm**: Node.js package manager (comes with Node.js)
 
-**Post-creation script** (`.devcontainer/post-create.sh`):
-- Installs Python dependencies with `uv`
-- Installs Node.js dependencies for mobile and web
-- Sets up pre-commit hooks
+**Environment Setup:**
+1. Clone the repository
+2. Set up Firebase credentials (see backend/.env.example)
+3. Install dependencies:
+   ```bash
+   # Backend
+   cd backend && uv sync
+
+   # Mobile
+   cd mobile && npm install
+
+   # Web
+   cd web && npm install
+   ```
+
+**Running the Development Servers:**
+```bash
+# Backend (port 8000)
+cd backend && uv run uvicorn app.main:app --reload
+
+# Mobile (Expo dev server)
+cd mobile && npm start
+
+# Web (port 3000)
+cd web && npm run dev
+```
 
 ### Formatters & Linters
 - **Python**: Ruff (configured in `pyproject.toml` - 100 char line length)
 - **TypeScript**: Prettier (format on save enabled)
-- **VS Code**: Auto-formatting on save configured in `.devcontainer/devcontainer.json`
+- **VS Code**: Configure editor settings for auto-formatting on save
 
 ## Firebase Integration
 
