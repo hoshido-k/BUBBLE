@@ -398,28 +398,6 @@ BUBBLEは、**健全な境界線を保ちながら、大切な人とのつなが
 
 ---
 
-## 🛠 技術スタック
-
-### バックエンド
-- **フレームワーク**: FastAPI（Python）
-- **データベース**: PostgreSQL（メインデータ）、Redis（リアルタイム通信・キャッシュ）
-- **認証**: JWT + OAuth2
-- **リアルタイム通信**: WebSocket
-- **位置情報処理**: GeoPy、PostGIS
-
-### フロントエンド
-- **モバイルアプリ**: React Native（iOS/Android両対応）
-- **位置情報**: Expo Location
-- **生体認証**: Expo Local Authentication
-- **状態管理**: Zustand / Context API
-
-### インフラ
-- **バックエンドホスティング**: Railway / Render / Fly.io
-- **フロントエンド**: Expo + EAS Build
-- **データベース**: Supabase / Railway
-
----
-
 ## 🚀 開発ロードマップ
 
 ### フェーズ1: MVP開発（4-6週間）
