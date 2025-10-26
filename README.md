@@ -444,5 +444,110 @@ BUBBLEは、**健全な境界線を保ちながら、大切な人とのつなが
 
 ---
 
-**最終更新**: 2025年10月26日  
+## 🛠️ 技術スタック
+
+### バックエンド
+- **FastAPI** (Python): RESTful API
+- **Firebase**:
+  - Firebase Authentication: ユーザー認証
+  - Firestore: リアルタイムデータベース
+  - Firebase Cloud Messaging: プッシュ通知
+  - Firebase Storage: ファイル保存
+- **Google Cloud Run**: サーバーレスホスティング
+- **uv**: 高速パッケージマネージャー
+
+### フロントエンド
+- **React Native (Expo)**: モバイルアプリ (iOS/Android)
+- **Next.js 14**: Webアプリ（管理画面）
+- **TypeScript**: 型安全性
+- **Zustand**: 状態管理
+
+### インフラ
+- **Firebase**: インフラストラクチャ
+- **Google Cloud Platform**: バックエンドホスティング
+- **Vercel**: Webアプリホスティング（推奨）
+
+---
+
+## 📂 プロジェクト構成
+
+```
+BUBBLE/
+├── backend/              # FastAPI バックエンド
+├── mobile/               # React Native モバイルアプリ
+├── web/                  # Next.js Webアプリ
+├── shared/               # 共通コード（型定義等）
+├── firebase/             # Firebaseセキュリティルール
+├── docs/                 # ドキュメント
+└── docker-compose.yml    # ローカル開発環境
+```
+
+詳細なディレクトリ構成は各フォルダのREADMEを参照してください。
+
+---
+
+## 🚀 クイックスタート
+
+### 前提条件
+- Node.js 18以上
+- Python 3.11以上
+- uv (Pythonパッケージマネージャー)
+- Firebase プロジェクト
+
+### 1. リポジトリのクローン
+
+```bash
+git clone https://github.com/yourusername/bubble.git
+cd bubble
+```
+
+### 2. バックエンドのセットアップ
+
+```bash
+cd backend
+uv sync
+cp .env.example .env
+# .envファイルを編集してFirebase認証情報を設定
+uv run uvicorn app.main:app --reload
+```
+
+### 3. モバイルアプリのセットアップ
+
+```bash
+cd mobile
+npm install
+cp .env.example .env
+# .envファイルを編集
+npm start
+```
+
+### 4. Webアプリのセットアップ
+
+```bash
+cd web
+npm install
+cp .env.example .env.local
+# .env.localファイルを編集
+npm run dev
+```
+
+### 5. Dockerでの起動（オプション）
+
+```bash
+docker-compose up
+```
+
+---
+
+## 📚 ドキュメント
+
+- [バックエンドAPI仕様](./backend/README.md)
+- [モバイルアプリ開発ガイド](./mobile/README.md)
+- [Webアプリ開発ガイド](./web/README.md)
+- [データベース設計](./docs/database/)
+- [アーキテクチャ設計](./docs/architecture/)
+
+---
+
+**最終更新**: 2025年10月26日
 **バージョン**: 1.0（構想段階）

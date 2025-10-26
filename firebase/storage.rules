@@ -1,0 +1,28 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ユーザープロフィール画像
+    match /profile_images/{userId}/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId
+                   && request.resource.size < 5 * 1024 * 1024  // 5MB以下
+                   && request.resource.contentType.matches('image/.*');
+    }
+
+    // チャット画像
+    match /chat_images/{userId}/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId
+                   && request.resource.size < 10 * 1024 * 1024  // 10MB以下
+                   && request.resource.contentType.matches('image/.*');
+    }
+
+    // 住所変更申請の証明書類
+    match /location_change_documents/{userId}/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId
+                   && request.resource.size < 5 * 1024 * 1024;  // 5MB以下
+    }
+  }
+}
