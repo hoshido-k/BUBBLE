@@ -12,7 +12,8 @@ from pydantic import BaseModel, Field
 class AddressType(str, Enum):
     """住所タイプ"""
     HOME = "home"
-    WORK = "work"
+    WORK = "work"  # 職場（社会人）
+    SCHOOL = "school"  # 学校（学生）
 
 
 class AddressUpdateRequest(BaseModel):

@@ -17,7 +17,8 @@ class Settings(BaseSettings):
 
     # 位置情報設定
     HOME_RADIUS_METERS: int = 200  # 自宅判定半径
-    WORK_RADIUS_METERS: int = 500  # 職場判定半径
+    WORK_RADIUS_METERS: int = 500  # 職場判定半径（社会人）
+    SCHOOL_RADIUS_METERS: int = 500  # 学校判定半径（学生）
     LOCATION_CHANGE_LOCK_DAYS: int = 90  # 住所変更制限日数
 
     # ニアミス検出設定

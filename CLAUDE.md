@@ -285,6 +285,25 @@ Test configuration not yet implemented. When added, use standard React Native te
 
 ## Common Development Workflows
 
+### Git Branching Strategy
+When working on new features or fixes:
+1. Always create a feature branch from `develop`:
+   ```bash
+   git checkout develop
+   git pull origin develop
+   git checkout -b feature/your-feature-name
+   ```
+2. Work on your feature branch
+3. When ready, create a PR to merge back into `develop`
+4. The `develop` branch is the main integration branch
+5. `main` branch is reserved for production-ready releases
+
+**Branch naming conventions:**
+- `feature/` - New features (e.g., `feature/near-miss-notifications`)
+- `fix/` - Bug fixes (e.g., `fix/location-status-calculation`)
+- `refactor/` - Code refactoring (e.g., `refactor/auth-service`)
+- `docs/` - Documentation updates (e.g., `docs/api-readme`)
+
 ### Adding a New API Endpoint
 1. Create router in `backend/app/api/v1/new_feature.py`
 2. Define Pydantic schemas in `backend/app/schemas/new_feature.py`
