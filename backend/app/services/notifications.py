@@ -6,7 +6,7 @@ Firestoreでの通知履歴管理を行います。
 """
 
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, List, Optional
 
 from firebase_admin import messaging
@@ -181,7 +181,7 @@ class NotificationService:
             "body": body,
             "data": data,
             "is_read": False,
-            "created_at": datetime.utcnow(),
+            "created_at": datetime.now(UTC),
             "read_at": None,
         }
 
@@ -209,7 +209,7 @@ class NotificationService:
         # 無効なトークンを除外
         updated_tokens = [token for token in current_tokens if token not in invalid_tokens]
 
-        user_ref.update({"fcm_tokens": updated_tokens, "updated_at": datetime.utcnow()})
+        user_ref.update({"fcm_tokens": updated_tokens, "updated_at": datetime.now(UTC)})
         logger.info(f"ユーザー {user_id} の無効なFCMトークンを削除しました: {invalid_tokens}")
 
     async def register_fcm_token(self, user_id: str, fcm_token: str) -> None:
@@ -239,7 +239,7 @@ class NotificationService:
 
         # トークンを追加
         current_tokens.append(fcm_token)
-        user_ref.update({"fcm_tokens": current_tokens, "updated_at": datetime.utcnow()})
+        user_ref.update({"fcm_tokens": current_tokens, "updated_at": datetime.now(UTC)})
         logger.info(f"FCMトークンを登録しました: {user_id}")
 
     async def remove_fcm_token(self, user_id: str, fcm_token: str) -> None:
@@ -265,7 +265,7 @@ class NotificationService:
         # トークンを削除
         if fcm_token in current_tokens:
             current_tokens.remove(fcm_token)
-            user_ref.update({"fcm_tokens": current_tokens, "updated_at": datetime.utcnow()})
+            user_ref.update({"fcm_tokens": current_tokens, "updated_at": datetime.now(UTC)})
             logger.info(f"FCMトークンを削除しました: {user_id}")
         else:
             logger.warning(f"削除対象のFCMトークンが見つかりません: {user_id}")
@@ -338,7 +338,7 @@ class NotificationService:
             ValueError: 権限がない場合
         """
         updated_count = 0
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
 
         for notification_id in notification_ids:
             notification_ref = self.db.collection("notifications").document(notification_id)

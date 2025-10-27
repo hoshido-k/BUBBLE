@@ -2,7 +2,7 @@
 フレンド管理APIエンドポイントのテスト
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
 
 from fastapi import status
@@ -22,7 +22,7 @@ class TestFriendRequestEndpoints:
             to_user_id="target_user",
             message="よろしく",
             status=FriendRequestStatus.PENDING,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(UTC),
             responded_at=None,
         )
 
@@ -62,7 +62,7 @@ class TestFriendRequestEndpoints:
                 to_user_id=sample_user1.uid,
                 message="test",
                 status=FriendRequestStatus.PENDING,
-                created_at=datetime.utcnow(),
+                created_at=datetime.now(UTC),
                 responded_at=None,
                 from_user_display_name=sample_user2.display_name,
                 from_user_profile_image_url=None,
@@ -101,8 +101,8 @@ class TestFriendRequestEndpoints:
             can_see_friend_location=False,  # 初期値はfalse
             nickname=None,
             status=FriendshipStatus.ACTIVE,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
             trust_level=TrustLevel.FRIEND,  # 後方互換性のため
         )
 
@@ -140,7 +140,7 @@ class TestFriendshipEndpoints:
                 can_see_friend_location=False,
                 nickname=None,
                 status=FriendshipStatus.ACTIVE,
-                created_at=datetime.utcnow(),
+                created_at=datetime.now(UTC),
                 friend_display_name=sample_user2.display_name,
                 friend_email=sample_user2.email,
                 friend_profile_image_url=None,
@@ -179,7 +179,7 @@ class TestFriendshipEndpoints:
                 can_see_friend_location=False,
                 nickname=None,
                 status=FriendshipStatus.ACTIVE,
-                created_at=datetime.utcnow(),
+                created_at=datetime.now(UTC),
                 friend_display_name=sample_user2.display_name,
                 friend_email=sample_user2.email,
                 friend_profile_image_url=None,
@@ -219,7 +219,7 @@ class TestFriendshipEndpoints:
                 can_see_friend_location=False,
                 nickname="親友",
                 status=FriendshipStatus.ACTIVE,
-                created_at=datetime.utcnow(),
+                created_at=datetime.now(UTC),
                 friend_display_name=sample_user2.display_name,
                 friend_email=sample_user2.email,
                 friend_profile_image_url=None,
@@ -271,7 +271,7 @@ class TestLocationShareEndpoints:
             requester_id=sample_user1.uid,
             target_id=sample_user2.uid,
             status=FriendRequestStatus.PENDING,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(UTC),
             responded_at=None,
         )
 
@@ -310,7 +310,7 @@ class TestLocationShareEndpoints:
                 requester_id=sample_user2.uid,
                 target_id=sample_user1.uid,
                 status=FriendRequestStatus.PENDING,
-                created_at=datetime.utcnow(),
+                created_at=datetime.now(UTC),
                 responded_at=None,
                 requester_display_name=sample_user2.display_name,
                 requester_profile_image_url=None,

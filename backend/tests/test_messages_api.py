@@ -2,7 +2,7 @@
 メッセージングAPIエンドポイントのテスト
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
 
 from fastapi import status
@@ -25,7 +25,7 @@ class TestMessageEndpoints:
             content_type=MessageContentType.TEXT,
             is_visible_to_recipient=False,
             is_read=False,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(UTC),
             read_at=None,
             revealed_at=None,
             sender_display_name=sample_user1.display_name,
@@ -103,11 +103,11 @@ class TestMessageEndpoints:
             AsyncMock(
                 conversation_id=f"{sample_user1.uid}_{sample_user2.uid}",
                 participant_id=sample_user2.uid,
-                last_message_at=datetime.utcnow(),
+                last_message_at=datetime.now(UTC),
                 last_message_content="最後のメッセージ",
                 last_message_sender_id=sample_user2.uid,
                 unread_count=3,
-                created_at=datetime.utcnow(),
+                created_at=datetime.now(UTC),
                 participant_display_name=sample_user2.display_name,
                 participant_profile_image_url=None,
             )
@@ -136,9 +136,9 @@ class TestMessageEndpoints:
                 content_type=MessageContentType.TEXT,
                 is_visible_to_recipient=True,
                 is_read=True,
-                created_at=datetime.utcnow(),
-                read_at=datetime.utcnow(),
-                revealed_at=datetime.utcnow(),
+                created_at=datetime.now(UTC),
+                read_at=datetime.now(UTC),
+                revealed_at=datetime.now(UTC),
                 sender_display_name=sample_user2.display_name,
                 sender_profile_image_url=None,
             ),
@@ -151,9 +151,9 @@ class TestMessageEndpoints:
                 content_type=MessageContentType.TEXT,
                 is_visible_to_recipient=True,
                 is_read=False,
-                created_at=datetime.utcnow(),
+                created_at=datetime.now(UTC),
                 read_at=None,
-                revealed_at=datetime.utcnow(),
+                revealed_at=datetime.now(UTC),
                 sender_display_name=sample_user1.display_name,
                 sender_profile_image_url=None,
             ),
@@ -184,7 +184,7 @@ class TestMessageEndpoints:
                 content_type=MessageContentType.TEXT,
                 is_visible_to_recipient=True,
                 is_read=False,
-                created_at=datetime.utcnow(),
+                created_at=datetime.now(UTC),
                 read_at=None,
                 revealed_at=None,
                 sender_display_name=sample_user2.display_name,

@@ -2,7 +2,7 @@
 メッセージングサービス
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import List, Optional
 
 from google.cloud.firestore_v1 import FieldFilter
@@ -104,7 +104,7 @@ class MessageService:
             "content_type": message_data.content_type.value,
             "is_visible_to_recipient": False,  # デフォルトでは非表示
             "is_read": False,
-            "created_at": datetime.utcnow(),
+            "created_at": datetime.now(UTC),
             "read_at": None,
             "revealed_at": None,
         }
@@ -176,7 +176,7 @@ class MessageService:
         conversation_ref = self.db.collection("conversations").document(conversation_id)
         conversation_doc = conversation_ref.get()
 
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
 
         if not conversation_doc.exists:
             # 新規会話を作成
@@ -345,7 +345,7 @@ class MessageService:
             ValueError: 権限がない場合
         """
         updated_count = 0
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
 
         for message_id in message_ids:
             message_ref = self.db.collection("messages").document(message_id)
@@ -385,7 +385,7 @@ class MessageService:
             ValueError: 権限がない場合
         """
         updated_count = 0
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
 
         # 会話ごとの未読数を減らすためのカウンター
         conversation_unread_decrements: dict[str, int] = {}
