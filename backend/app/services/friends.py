@@ -2,7 +2,7 @@
 フレンド管理サービス
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import List, Optional
 
 from google.cloud.firestore_v1 import FieldFilter
@@ -81,7 +81,7 @@ class FriendService:
             "to_user_id": to_user_id,
             "message": request_data.message,
             "status": FriendRequestStatus.PENDING.value,
-            "created_at": datetime.utcnow(),
+            "created_at": datetime.now(UTC),
             "responded_at": None,
         }
 
@@ -178,7 +178,7 @@ class FriendService:
 
         # リクエストステータスを更新
         request_ref.update(
-            {"status": FriendRequestStatus.ACCEPTED.value, "responded_at": datetime.utcnow()}
+            {"status": FriendRequestStatus.ACCEPTED.value, "responded_at": datetime.now(UTC)}
         )
 
         # フレンド関係を作成（双方向）
@@ -226,7 +226,7 @@ class FriendService:
 
         # リクエストステータスを更新
         request_ref.update(
-            {"status": FriendRequestStatus.REJECTED.value, "responded_at": datetime.utcnow()}
+            {"status": FriendRequestStatus.REJECTED.value, "responded_at": datetime.now(UTC)}
         )
 
     async def _create_friendship(
@@ -256,8 +256,8 @@ class FriendService:
             "can_see_friend_location": can_see_friend_location,
             "nickname": nickname,
             "status": FriendshipStatus.ACTIVE.value,
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow(),
+            "created_at": datetime.now(UTC),
+            "updated_at": datetime.now(UTC),
             # 後方互換性のため
             "trust_level": TrustLevel.FRIEND.value,
         }
@@ -364,7 +364,7 @@ class FriendService:
         # 後方互換性のため、trust_levelがあれば値に変換
         if "trust_level" in update_dict and update_dict["trust_level"] is not None:
             update_dict["trust_level"] = update_dict["trust_level"].value
-        update_dict["updated_at"] = datetime.utcnow()
+        update_dict["updated_at"] = datetime.now(UTC)
 
         # Firestoreを更新
         friendship_ref = self.db.collection("friendships").document(friendship.friendship_id)
@@ -412,7 +412,7 @@ class FriendService:
         if friendship:
             friendship_ref = self.db.collection("friendships").document(friendship.friendship_id)
             friendship_ref.update(
-                {"status": FriendshipStatus.BLOCKED.value, "updated_at": datetime.utcnow()}
+                {"status": FriendshipStatus.BLOCKED.value, "updated_at": datetime.now(UTC)}
             )
 
     async def get_trust_level(self, user_id: str, friend_id: str) -> Optional[TrustLevel]:
@@ -503,7 +503,7 @@ class FriendService:
             "requester_id": requester_id,
             "target_id": target_id,
             "status": FriendRequestStatus.PENDING.value,
-            "created_at": datetime.utcnow(),
+            "created_at": datetime.now(UTC),
             "responded_at": None,
         }
 
@@ -604,7 +604,7 @@ class FriendService:
 
         # リクエストステータスを更新
         request_ref.update(
-            {"status": FriendRequestStatus.ACCEPTED.value, "responded_at": datetime.utcnow()}
+            {"status": FriendRequestStatus.ACCEPTED.value, "responded_at": datetime.now(UTC)}
         )
 
         # フレンド関係を更新（requesterがtargetの位置を見られるようにする）
@@ -615,7 +615,7 @@ class FriendService:
             raise ValueError("フレンド関係が見つかりません")
 
         friendship_ref = self.db.collection("friendships").document(friendship.friendship_id)
-        friendship_ref.update({"can_see_friend_location": True, "updated_at": datetime.utcnow()})
+        friendship_ref.update({"can_see_friend_location": True, "updated_at": datetime.now(UTC)})
 
         # 更新後のフレンド関係を取得して返す
         updated_doc = friendship_ref.get()
@@ -650,7 +650,7 @@ class FriendService:
 
         # リクエストステータスを更新
         request_ref.update(
-            {"status": FriendRequestStatus.REJECTED.value, "responded_at": datetime.utcnow()}
+            {"status": FriendRequestStatus.REJECTED.value, "responded_at": datetime.now(UTC)}
         )
 
     async def revoke_location_share(self, user_id: str, viewer_id: str) -> None:
@@ -679,4 +679,4 @@ class FriendService:
 
         # can_see_friend_location を false にする
         friendship_ref = self.db.collection("friendships").document(friendship.friendship_id)
-        friendship_ref.update({"can_see_friend_location": False, "updated_at": datetime.utcnow()})
+        friendship_ref.update({"can_see_friend_location": False, "updated_at": datetime.now(UTC)})

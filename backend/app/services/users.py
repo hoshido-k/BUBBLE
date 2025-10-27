@@ -2,7 +2,7 @@
 ユーザー管理サービス
 """
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import List, Optional
 
 from app.config import settings
@@ -64,7 +64,7 @@ class UserService:
 
         # 更新データの準備（Noneでない値のみ）
         update_dict = update_data.model_dump(exclude_unset=True, exclude_none=True)
-        update_dict["updated_at"] = datetime.utcnow()
+        update_dict["updated_at"] = datetime.now(UTC)
 
         # Firestoreを更新
         user_ref.update(update_dict)
@@ -95,7 +95,7 @@ class UserService:
             return True
 
         # 最後に変更した日時から90日経過しているかチェック
-        days_since_change = (datetime.utcnow() - address.last_changed_at).days
+        days_since_change = (datetime.now(UTC) - address.last_changed_at).days
         return days_since_change >= settings.LOCATION_CHANGE_LOCK_DAYS
 
     async def update_address(
@@ -118,7 +118,7 @@ class UserService:
         # 変更可能かチェック
         if not await self.can_change_address(uid, address_type):
             days_left = settings.LOCATION_CHANGE_LOCK_DAYS - (
-                datetime.utcnow()
+                datetime.now(UTC)
                 - (
                     (await self.get_user_by_uid(uid)).home_address.last_changed_at
                     if address_type == AddressType.HOME
@@ -131,8 +131,8 @@ class UserService:
         new_address = Address(
             latitude=address_data.latitude,
             longitude=address_data.longitude,
-            registered_at=datetime.utcnow(),
-            last_changed_at=datetime.utcnow(),
+            registered_at=datetime.now(UTC),
+            last_changed_at=datetime.now(UTC),
         )
 
         # Firestoreを更新
@@ -140,7 +140,7 @@ class UserService:
         field_name = "home_address" if address_type == AddressType.HOME else "work_address"
 
         user_ref.update(
-            {field_name: new_address.model_dump(mode="json"), "updated_at": datetime.utcnow()}
+            {field_name: new_address.model_dump(mode="json"), "updated_at": datetime.now(UTC)}
         )
 
         return await self.get_user_by_uid(uid)
@@ -177,7 +177,7 @@ class UserService:
             "description": request.description,
             "document_url": request.document_url,
             "status": "pending",
-            "created_at": datetime.utcnow(),
+            "created_at": datetime.now(UTC),
             "reviewed_at": None,
             "reviewer_comment": None,
         }
@@ -225,7 +225,7 @@ class UserService:
         user_ref.update(
             {
                 "custom_locations": user.custom_locations + [new_location.model_dump(mode="json")],
-                "updated_at": datetime.utcnow(),
+                "updated_at": datetime.now(UTC),
             }
         )
 
@@ -267,7 +267,7 @@ class UserService:
         user_ref.update(
             {
                 "custom_locations": [loc.model_dump(mode="json") for loc in user.custom_locations],
-                "updated_at": datetime.utcnow(),
+                "updated_at": datetime.now(UTC),
             }
         )
 
@@ -302,7 +302,7 @@ class UserService:
         user_ref.update(
             {
                 "custom_locations": [loc.model_dump(mode="json") for loc in user.custom_locations],
-                "updated_at": datetime.utcnow(),
+                "updated_at": datetime.now(UTC),
             }
         )
 
@@ -330,7 +330,7 @@ class UserService:
         if not address:
             return None
 
-        days_since_change = (datetime.utcnow() - address.last_changed_at).days
+        days_since_change = (datetime.now(UTC) - address.last_changed_at).days
         days_remaining = settings.LOCATION_CHANGE_LOCK_DAYS - days_since_change
 
         return max(0, days_remaining)

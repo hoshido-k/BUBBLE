@@ -2,7 +2,7 @@
 認証サービス - Firebase Authentication + Firestore連携
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Optional, Dict, Any
 from firebase_admin import auth, firestore
 from firebase_admin.exceptions import FirebaseError
@@ -46,8 +46,8 @@ class AuthService:
                 uid=user_record.uid,
                 email=request.email,
                 display_name=request.display_name,
-                created_at=datetime.utcnow(),
-                updated_at=datetime.utcnow()
+                created_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC)
             )
 
             user_ref = self.db.collection('users').document(user_record.uid)
