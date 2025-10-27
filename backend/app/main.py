@@ -1,9 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+from app.api.v1 import auth, users
 from app.core.firebase import initialize_firebase
-from app.api.v1 import auth
+
 # TODO: 他のルーターは実装後にインポート
-# from app.api.v1 import users, messages, locations, friends, notifications, near_miss
+# from app.api.v1 import messages, locations, friends, notifications, near_miss
 
 app = FastAPI(
     title="BUBBLE API",
@@ -25,8 +27,8 @@ app.add_middleware(
 
 # ルーター登録
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["認証"])
+app.include_router(users.router, prefix="/api/v1/users", tags=["ユーザー"])
 # TODO: 他のルーターは実装後に登録
-# app.include_router(users.router, prefix="/api/v1/users", tags=["ユーザー"])
 # app.include_router(messages.router, prefix="/api/v1/messages", tags=["メッセージ"])
 # app.include_router(locations.router, prefix="/api/v1/locations", tags=["位置情報"])
 # app.include_router(friends.router, prefix="/api/v1/friends", tags=["フレンド"])
