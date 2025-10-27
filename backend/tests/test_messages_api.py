@@ -81,11 +81,11 @@ class TestMessageEndpoints:
 
             assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_send_message_insufficient_trust_level_error(self, client, sample_user2):
-        """信頼レベル不足のエラー"""
+    def test_send_message_non_existent_recipient_error(self, client, sample_user2):
+        """存在しない受信者へのメッセージ送信はエラー"""
         mock_message_service = AsyncMock()
         mock_message_service.send_message.side_effect = ValueError(
-            "メッセージを送信するには信頼レベル2（友達）以上が必要です"
+            "指定された受信者が見つかりません"
         )
 
         with patch("app.api.v1.messages.MessageService", return_value=mock_message_service):

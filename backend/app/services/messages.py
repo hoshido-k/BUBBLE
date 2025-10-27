@@ -8,14 +8,12 @@ from typing import List, Optional
 from google.cloud.firestore_v1 import FieldFilter
 
 from app.core.firebase import get_firestore_client
-from app.schemas.friend import TrustLevel
 from app.schemas.message import (
-    ConversationInDB,
     ConversationResponse,
     MessageCreate,
-    MessageInDB,
     MessageResponse,
 )
+from app.schemas.notification import NotificationType
 from app.services.friends import FriendService
 from app.services.users import UserService
 
@@ -44,7 +42,7 @@ class MessageService:
 
     async def _check_messaging_permission(self, sender_id: str, recipient_id: str) -> bool:
         """
-        メッセージ送信権限をチェック（信頼レベル2以上が必要）
+        メッセージ送信権限をチェック（フレンドであればメッセージ送信可能）
 
         Args:
             sender_id: 送信者ID
@@ -54,15 +52,13 @@ class MessageService:
             メッセージ送信可能な場合True
 
         Raises:
-            ValueError: フレンドでない、または信頼レベルが不足している場合
+            ValueError: フレンドでない場合
         """
-        trust_level = await self.friend_service.get_trust_level(sender_id, recipient_id)
+        # 新仕様：フレンドであればメッセージ送信可能（信頼レベルチェックは不要）
+        is_friend = await self.friend_service.is_friend(sender_id, recipient_id)
 
-        if trust_level is None:
+        if not is_friend:
             raise ValueError("メッセージを送信するにはフレンドである必要があります")
-
-        if trust_level.value < TrustLevel.FRIEND.value:
-            raise ValueError("メッセージを送信するには信頼レベル2（友達）以上が必要です")
 
         return True
 
@@ -124,8 +120,36 @@ class MessageService:
             recipient_id=recipient_id,
         )
 
-        # 送信者の情報を取得して返す
+        # 送信者の情報を取得
         sender = await self.user_service.get_user_by_uid(sender_id)
+
+        # プッシュ通知を送信（受信者に）
+        # 循環インポートを避けるために、ここでインポート
+        from app.services.notifications import NotificationService
+
+        notification_service = NotificationService()
+        try:
+            sender_name = sender.display_name if sender else "誰か"
+            await notification_service.send_push_notification(
+                user_id=recipient_id,
+                title=f"{sender_name}からメッセージが届きました",
+                body=message_data.content[:50] + ("..." if len(message_data.content) > 50 else ""),
+                notification_type=NotificationType.MESSAGE,
+                data={
+                    "message_id": message_ref.id,
+                    "sender_id": sender_id,
+                    "conversation_id": conversation_id,
+                },
+                save_to_db=True,
+            )
+        except Exception as e:
+            # 通知送信に失敗してもメッセージ送信は成功とする
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.warning(f"通知送信に失敗しました: {e}")
+
+        # レスポンスを構築
         message_dict["sender_display_name"] = sender.display_name if sender else None
         message_dict["sender_profile_image_url"] = sender.profile_image_url if sender else None
 

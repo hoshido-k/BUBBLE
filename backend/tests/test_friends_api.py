@@ -98,11 +98,12 @@ class TestFriendRequestEndpoints:
             friendship_id="friendship_1",
             user_id=sample_user1.uid,
             friend_id="friend_user",
-            trust_level=TrustLevel.FRIEND,
+            can_see_friend_location=False,  # 初期値はfalse
             nickname=None,
             status=FriendshipStatus.ACTIVE,
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
+            trust_level=TrustLevel.FRIEND,  # 後方互換性のため
         )
 
         with patch("app.api.v1.friends.FriendService", return_value=mock_friend_service):
@@ -136,13 +137,14 @@ class TestFriendshipEndpoints:
             AsyncMock(
                 friendship_id="friendship_1",
                 friend_id=sample_user2.uid,
-                trust_level=TrustLevel.FRIEND,
+                can_see_friend_location=False,
                 nickname=None,
                 status=FriendshipStatus.ACTIVE,
                 created_at=datetime.utcnow(),
                 friend_display_name=sample_user2.display_name,
                 friend_email=sample_user2.email,
                 friend_profile_image_url=None,
+                trust_level=TrustLevel.FRIEND,  # 後方互換性のため
             )
         ]
 
@@ -165,6 +167,7 @@ class TestFriendshipEndpoints:
             friendship_id="friendship_1",
             user_id=sample_user1.uid,
             friend_id=sample_user2.uid,
+            can_see_friend_location=False,
             trust_level=TrustLevel.FRIEND,
         )
 
@@ -173,13 +176,14 @@ class TestFriendshipEndpoints:
             AsyncMock(
                 friendship_id="friendship_1",
                 friend_id=sample_user2.uid,
-                trust_level=TrustLevel.FRIEND,
+                can_see_friend_location=False,
                 nickname=None,
                 status=FriendshipStatus.ACTIVE,
                 created_at=datetime.utcnow(),
                 friend_display_name=sample_user2.display_name,
                 friend_email=sample_user2.email,
                 friend_profile_image_url=None,
+                trust_level=TrustLevel.FRIEND,
             )
         ]
 
@@ -201,7 +205,7 @@ class TestFriendshipEndpoints:
             assert response.status_code == status.HTTP_404_NOT_FOUND
 
     def test_update_friendship(self, client, sample_user2):
-        """フレンド関係更新（信頼レベル・ニックネーム）"""
+        """フレンド関係更新（ニックネーム）"""
         mock_friend_service = AsyncMock()
 
         # update_friendshipのモック
@@ -212,25 +216,25 @@ class TestFriendshipEndpoints:
             AsyncMock(
                 friendship_id="friendship_1",
                 friend_id=sample_user2.uid,
-                trust_level=TrustLevel.BEST_FRIEND,
+                can_see_friend_location=False,
                 nickname="親友",
                 status=FriendshipStatus.ACTIVE,
                 created_at=datetime.utcnow(),
                 friend_display_name=sample_user2.display_name,
                 friend_email=sample_user2.email,
                 friend_profile_image_url=None,
+                trust_level=TrustLevel.FRIEND,
             )
         ]
 
         with patch("app.api.v1.friends.FriendService", return_value=mock_friend_service):
             response = client.patch(
                 f"/api/v1/friends/{sample_user2.uid}",
-                json={"trust_level": TrustLevel.BEST_FRIEND.value, "nickname": "親友"},
+                json={"nickname": "親友"},
             )
 
             assert response.status_code == status.HTTP_200_OK
             data = response.json()
-            assert data["trust_level"] == TrustLevel.BEST_FRIEND.value
             assert data["nickname"] == "親友"
 
     def test_remove_friend(self, client, sample_user2):
@@ -254,3 +258,142 @@ class TestFriendshipEndpoints:
             assert response.status_code == status.HTTP_200_OK
             data = response.json()
             assert "message" in data
+
+
+class TestLocationShareEndpoints:
+    """位置情報共有関連エンドポイントのテスト"""
+
+    def test_send_location_share_request(self, client, sample_user1, sample_user2):
+        """位置情報共有リクエスト送信"""
+        mock_friend_service = AsyncMock()
+        mock_friend_service.send_location_share_request.return_value = AsyncMock(
+            request_id="loc_request_123",
+            requester_id=sample_user1.uid,
+            target_id=sample_user2.uid,
+            status=FriendRequestStatus.PENDING,
+            created_at=datetime.utcnow(),
+            responded_at=None,
+        )
+
+        with patch("app.api.v1.friends.FriendService", return_value=mock_friend_service):
+            response = client.post(
+                "/api/v1/friends/location-share/requests",
+                json={"target_user_id": sample_user2.uid},
+            )
+
+            assert response.status_code == status.HTTP_201_CREATED
+            data = response.json()
+            assert "request_id" in data
+            assert data["status"] == FriendRequestStatus.PENDING.value
+
+    def test_send_location_share_request_not_friend_error(self, client, sample_user2):
+        """フレンドでないユーザーへの位置情報共有リクエストはエラー"""
+        mock_friend_service = AsyncMock()
+        mock_friend_service.send_location_share_request.side_effect = ValueError(
+            "位置情報共有リクエストを送信するにはフレンドである必要があります"
+        )
+
+        with patch("app.api.v1.friends.FriendService", return_value=mock_friend_service):
+            response = client.post(
+                "/api/v1/friends/location-share/requests",
+                json={"target_user_id": sample_user2.uid},
+            )
+
+            assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_get_received_location_share_requests(self, client, sample_user1, sample_user2):
+        """受信した位置情報共有リクエスト一覧取得"""
+        mock_friend_service = AsyncMock()
+        mock_friend_service.get_received_location_share_requests.return_value = [
+            AsyncMock(
+                request_id="loc_request_1",
+                requester_id=sample_user2.uid,
+                target_id=sample_user1.uid,
+                status=FriendRequestStatus.PENDING,
+                created_at=datetime.utcnow(),
+                responded_at=None,
+                requester_display_name=sample_user2.display_name,
+                requester_profile_image_url=None,
+            )
+        ]
+
+        with patch("app.api.v1.friends.FriendService", return_value=mock_friend_service):
+            response = client.get("/api/v1/friends/location-share/requests/received")
+
+            assert response.status_code == status.HTTP_200_OK
+            data = response.json()
+            assert "requests" in data
+            assert "total" in data
+            assert data["total"] == 1
+
+    def test_get_sent_location_share_requests(self, client):
+        """送信した位置情報共有リクエスト一覧取得"""
+        mock_friend_service = AsyncMock()
+        mock_friend_service.get_sent_location_share_requests.return_value = []
+
+        with patch("app.api.v1.friends.FriendService", return_value=mock_friend_service):
+            response = client.get("/api/v1/friends/location-share/requests/sent")
+
+            assert response.status_code == status.HTTP_200_OK
+            data = response.json()
+            assert data["total"] == 0
+            assert data["requests"] == []
+
+    def test_accept_location_share_request(self, client, sample_user1):
+        """位置情報共有リクエスト承認"""
+        mock_friend_service = AsyncMock()
+        mock_friend_service.accept_location_share_request.return_value = AsyncMock(
+            friendship_id="friendship_1",
+            user_id=sample_user1.uid,
+            friend_id="requester_user",
+            can_see_friend_location=True,  # 承認後はtrue
+            status=FriendshipStatus.ACTIVE,
+        )
+
+        with patch("app.api.v1.friends.FriendService", return_value=mock_friend_service):
+            response = client.post(
+                "/api/v1/friends/location-share/requests/loc_request_123/accept"
+            )
+
+            assert response.status_code == status.HTTP_200_OK
+            data = response.json()
+            assert "friendship_id" in data
+
+    def test_reject_location_share_request(self, client):
+        """位置情報共有リクエスト拒否"""
+        mock_friend_service = AsyncMock()
+        mock_friend_service.reject_location_share_request.return_value = None
+
+        with patch("app.api.v1.friends.FriendService", return_value=mock_friend_service):
+            response = client.post(
+                "/api/v1/friends/location-share/requests/loc_request_123/reject"
+            )
+
+            assert response.status_code == status.HTTP_200_OK
+            data = response.json()
+            assert "message" in data
+
+    def test_revoke_location_share(self, client, sample_user2):
+        """位置情報共有を停止"""
+        mock_friend_service = AsyncMock()
+        mock_friend_service.revoke_location_share.return_value = None
+
+        with patch("app.api.v1.friends.FriendService", return_value=mock_friend_service):
+            response = client.post(f"/api/v1/friends/{sample_user2.uid}/location-share/revoke")
+
+            assert response.status_code == status.HTTP_200_OK
+            data = response.json()
+            assert "message" in data
+            assert "停止" in data["message"]
+
+    def test_revoke_location_share_already_stopped_error(self, client, sample_user2):
+        """既に停止済みの位置情報共有を停止しようとするとエラー"""
+        mock_friend_service = AsyncMock()
+        mock_friend_service.revoke_location_share.side_effect = ValueError(
+            "既に位置情報共有は停止されています"
+        )
+
+        with patch("app.api.v1.friends.FriendService", return_value=mock_friend_service):
+            response = client.post(f"/api/v1/friends/{sample_user2.uid}/location-share/revoke")
+
+            assert response.status_code == status.HTTP_400_BAD_REQUEST
