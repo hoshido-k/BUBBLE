@@ -11,6 +11,8 @@ from app.schemas.friend import (
     FriendRequestListResponse,
     FriendshipResponse,
     FriendshipUpdate,
+    LocationShareRequestCreate,
+    LocationShareRequestListResponse,
 )
 from app.schemas.user import UserInDB
 from app.services.friends import FriendService
@@ -302,3 +304,176 @@ async def block_user(
     """
     await friend_service.block_user(current_user.uid, friend_id)
     return {"message": "ユーザーをブロックしました"}
+
+
+# ==================== 位置情報共有リクエスト ====================
+
+
+@router.post("/location-share/requests", response_model=dict, status_code=status.HTTP_201_CREATED)
+async def send_location_share_request(
+    request_data: LocationShareRequestCreate,
+    current_user: UserInDB = Depends(get_current_user),
+    friend_service: FriendService = Depends(lambda: FriendService()),
+):
+    """
+    位置情報共有リクエストを送信
+
+    フレンドに対して位置情報を見たい旨のリクエストを送信します。
+    承認されると、あなたは相手の位置ステータスを見ることができます。
+
+    Args:
+        request_data: リクエストデータ（対象ユーザーID）
+        current_user: 現在のユーザー
+        friend_service: フレンドサービス
+
+    Returns:
+        リクエスト送信結果
+
+    Raises:
+        HTTPException: フレンドでない、既にリクエスト送信済み、既に位置情報を見られる場合
+    """
+    try:
+        request = await friend_service.send_location_share_request(current_user.uid, request_data)
+        return {
+            "message": "位置情報共有リクエストを送信しました",
+            "request_id": request.request_id,
+            "status": request.status.value,
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.get("/location-share/requests/received", response_model=LocationShareRequestListResponse)
+async def get_received_location_share_requests(
+    current_user: UserInDB = Depends(get_current_user),
+    friend_service: FriendService = Depends(lambda: FriendService()),
+):
+    """
+    受信した位置情報共有リクエスト一覧を取得
+
+    自分宛てに送られてきた位置情報共有リクエストの一覧を取得します。
+
+    Args:
+        current_user: 現在のユーザー
+        friend_service: フレンドサービス
+
+    Returns:
+        受信したリクエスト一覧
+    """
+    requests = await friend_service.get_received_location_share_requests(current_user.uid)
+    return LocationShareRequestListResponse(requests=requests, total=len(requests))
+
+
+@router.get("/location-share/requests/sent", response_model=LocationShareRequestListResponse)
+async def get_sent_location_share_requests(
+    current_user: UserInDB = Depends(get_current_user),
+    friend_service: FriendService = Depends(lambda: FriendService()),
+):
+    """
+    送信した位置情報共有リクエスト一覧を取得
+
+    自分が送信した位置情報共有リクエストの一覧を取得します。
+
+    Args:
+        current_user: 現在のユーザー
+        friend_service: フレンドサービス
+
+    Returns:
+        送信したリクエスト一覧
+    """
+    requests = await friend_service.get_sent_location_share_requests(current_user.uid)
+    return LocationShareRequestListResponse(requests=requests, total=len(requests))
+
+
+@router.post("/location-share/requests/{request_id}/accept", response_model=dict)
+async def accept_location_share_request(
+    request_id: str = Path(..., description="リクエストID"),
+    current_user: UserInDB = Depends(get_current_user),
+    friend_service: FriendService = Depends(lambda: FriendService()),
+):
+    """
+    位置情報共有リクエストを承認
+
+    受信した位置情報共有リクエストを承認します。
+    承認すると、リクエスト送信者があなたの位置ステータスを見られるようになります。
+
+    Args:
+        request_id: リクエストID
+        current_user: 現在のユーザー
+        friend_service: フレンドサービス
+
+    Returns:
+        承認結果
+
+    Raises:
+        HTTPException: リクエストが見つからない、権限がない場合
+    """
+    try:
+        friendship = await friend_service.accept_location_share_request(
+            current_user.uid, request_id
+        )
+        return {
+            "message": "位置情報共有リクエストを承認しました",
+            "friendship_id": friendship.friendship_id,
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.post("/location-share/requests/{request_id}/reject", response_model=dict)
+async def reject_location_share_request(
+    request_id: str = Path(..., description="リクエストID"),
+    current_user: UserInDB = Depends(get_current_user),
+    friend_service: FriendService = Depends(lambda: FriendService()),
+):
+    """
+    位置情報共有リクエストを拒否
+
+    受信した位置情報共有リクエストを拒否します。
+
+    Args:
+        request_id: リクエストID
+        current_user: 現在のユーザー
+        friend_service: フレンドサービス
+
+    Returns:
+        拒否結果
+
+    Raises:
+        HTTPException: リクエストが見つからない、権限がない場合
+    """
+    try:
+        await friend_service.reject_location_share_request(current_user.uid, request_id)
+        return {"message": "位置情報共有リクエストを拒否しました"}
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.post("/{friend_id}/location-share/revoke", response_model=dict)
+async def revoke_location_share(
+    friend_id: str = Path(..., description="共有を停止する相手のUID"),
+    current_user: UserInDB = Depends(get_current_user),
+    friend_service: FriendService = Depends(lambda: FriendService()),
+):
+    """
+    位置情報共有を停止
+
+    承認済みの位置情報共有を停止します。
+    相手はあなたの位置ステータスを見られなくなります。
+
+    Args:
+        friend_id: 共有を停止する相手のUID（位置を見ている人）
+        current_user: 現在のユーザー
+        friend_service: フレンドサービス
+
+    Returns:
+        停止結果
+
+    Raises:
+        HTTPException: フレンド関係が見つからない、既に共有していない場合
+    """
+    try:
+        await friend_service.revoke_location_share(current_user.uid, friend_id)
+        return {"message": "位置情報共有を停止しました"}
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

@@ -16,6 +16,8 @@ from app.schemas.friend import (
     FriendshipResponse,
     FriendshipStatus,
     FriendshipUpdate,
+    LocationShareRequestCreate,
+    LocationShareRequestResponse,
     TrustLevel,
 )
 from app.services.users import UserService
@@ -180,16 +182,17 @@ class FriendService:
         )
 
         # フレンド関係を作成（双方向）
+        # 位置情報共有はデフォルトでオフ（別途リクエストが必要）
         friendship1 = await self._create_friendship(
             user_id=request_data["to_user_id"],
             friend_id=request_data["from_user_id"],
-            trust_level=TrustLevel.FRIEND,
+            can_see_friend_location=False,
         )
 
         await self._create_friendship(
             user_id=request_data["from_user_id"],
             friend_id=request_data["to_user_id"],
-            trust_level=TrustLevel.FRIEND,
+            can_see_friend_location=False,
         )
 
         return friendship1
@@ -230,7 +233,7 @@ class FriendService:
         self,
         user_id: str,
         friend_id: str,
-        trust_level: TrustLevel,
+        can_see_friend_location: bool = False,
         nickname: Optional[str] = None,
     ) -> FriendshipInDB:
         """
@@ -239,7 +242,7 @@ class FriendService:
         Args:
             user_id: ユーザーID
             friend_id: フレンドID
-            trust_level: 信頼レベル
+            can_see_friend_location: このユーザーがフレンドの位置を見られるか
             nickname: ニックネーム
 
         Returns:
@@ -250,11 +253,13 @@ class FriendService:
             "friendship_id": friendship_ref.id,
             "user_id": user_id,
             "friend_id": friend_id,
-            "trust_level": trust_level.value,
+            "can_see_friend_location": can_see_friend_location,
             "nickname": nickname,
             "status": FriendshipStatus.ACTIVE.value,
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow(),
+            # 後方互換性のため
+            "trust_level": TrustLevel.FRIEND.value,
         }
 
         friendship_ref.set(friendship_data)
@@ -356,7 +361,8 @@ class FriendService:
 
         # 更新データの準備
         update_dict = update_data.model_dump(exclude_unset=True, exclude_none=True)
-        if "trust_level" in update_dict:
+        # 後方互換性のため、trust_levelがあれば値に変換
+        if "trust_level" in update_dict and update_dict["trust_level"] is not None:
             update_dict["trust_level"] = update_dict["trust_level"].value
         update_dict["updated_at"] = datetime.utcnow()
 
@@ -411,7 +417,7 @@ class FriendService:
 
     async def get_trust_level(self, user_id: str, friend_id: str) -> Optional[TrustLevel]:
         """
-        フレンドの信頼レベルを取得
+        フレンドの信頼レベルを取得（後方互換性のため残す、非推奨）
 
         Args:
             user_id: ユーザーID
@@ -424,4 +430,253 @@ class FriendService:
         if not friendship:
             return None
 
-        return TrustLevel(friendship.trust_level)
+        # 後方互換性のため
+        if friendship.trust_level is not None:
+            return TrustLevel(friendship.trust_level)
+        return TrustLevel.FRIEND
+
+    async def can_see_location(self, viewer_id: str, target_id: str) -> bool:
+        """
+        位置情報を見る権限があるかチェック
+
+        Args:
+            viewer_id: 位置を見たいユーザーID
+            target_id: 位置を見られるユーザーID
+
+        Returns:
+            位置情報を見られる場合True
+        """
+        friendship = await self.get_friendship(viewer_id, target_id)
+        if not friendship:
+            return False
+
+        return friendship.can_see_friend_location
+
+    # ==================== 位置情報共有リクエスト ====================
+
+    async def send_location_share_request(
+        self, requester_id: str, request_data: LocationShareRequestCreate
+    ) -> LocationShareRequestResponse:
+        """
+        位置情報共有リクエストを送信
+
+        Args:
+            requester_id: リクエスト送信者のUID（位置を見たい人）
+            request_data: リクエストデータ
+
+        Returns:
+            作成されたリクエスト情報
+
+        Raises:
+            ValueError: 自分自身へのリクエスト、既存のリクエスト、フレンドでない場合
+        """
+        target_id = request_data.target_user_id
+
+        # 自分自身へのリクエストはエラー
+        if requester_id == target_id:
+            raise ValueError("自分自身に位置情報共有リクエストを送信できません")
+
+        # フレンドかチェック
+        if not await self.is_friend(requester_id, target_id):
+            raise ValueError("位置情報共有リクエストを送信するにはフレンドである必要があります")
+
+        # 既に位置情報を見られる場合
+        if await self.can_see_location(requester_id, target_id):
+            raise ValueError("既に位置情報を見ることができます")
+
+        # 既存のpendingリクエストがないかチェック
+        existing_requests = (
+            self.db.collection("location_share_requests")
+            .where(filter=FieldFilter("requester_id", "==", requester_id))
+            .where(filter=FieldFilter("target_id", "==", target_id))
+            .where(filter=FieldFilter("status", "==", FriendRequestStatus.PENDING.value))
+            .get()
+        )
+
+        if len(list(existing_requests)) > 0:
+            raise ValueError("既に位置情報共有リクエストを送信済みです")
+
+        # リクエストを作成
+        request_ref = self.db.collection("location_share_requests").document()
+        request_data_dict = {
+            "request_id": request_ref.id,
+            "requester_id": requester_id,
+            "target_id": target_id,
+            "status": FriendRequestStatus.PENDING.value,
+            "created_at": datetime.utcnow(),
+            "responded_at": None,
+        }
+
+        request_ref.set(request_data_dict)
+
+        return LocationShareRequestResponse(**request_data_dict)
+
+    async def get_received_location_share_requests(
+        self, user_id: str
+    ) -> List[LocationShareRequestResponse]:
+        """
+        受信した位置情報共有リクエスト一覧を取得
+
+        Args:
+            user_id: ユーザーID
+
+        Returns:
+            リクエスト一覧
+        """
+        requests = (
+            self.db.collection("location_share_requests")
+            .where(filter=FieldFilter("target_id", "==", user_id))
+            .where(filter=FieldFilter("status", "==", FriendRequestStatus.PENDING.value))
+            .order_by("created_at", direction="DESCENDING")
+            .get()
+        )
+
+        result = []
+        for req in requests:
+            req_data = req.to_dict()
+
+            # リクエスト送信者の情報を取得
+            requester = await self.user_service.get_user_by_uid(req_data["requester_id"])
+            if requester:
+                req_data["requester_display_name"] = requester.display_name
+                req_data["requester_profile_image_url"] = requester.profile_image_url
+
+            result.append(LocationShareRequestResponse(**req_data))
+
+        return result
+
+    async def get_sent_location_share_requests(
+        self, user_id: str
+    ) -> List[LocationShareRequestResponse]:
+        """
+        送信した位置情報共有リクエスト一覧を取得
+
+        Args:
+            user_id: ユーザーID
+
+        Returns:
+            リクエスト一覧
+        """
+        requests = (
+            self.db.collection("location_share_requests")
+            .where(filter=FieldFilter("requester_id", "==", user_id))
+            .where(filter=FieldFilter("status", "==", FriendRequestStatus.PENDING.value))
+            .order_by("created_at", direction="DESCENDING")
+            .get()
+        )
+
+        result = []
+        for req in requests:
+            req_data = req.to_dict()
+            result.append(LocationShareRequestResponse(**req_data))
+
+        return result
+
+    async def accept_location_share_request(self, user_id: str, request_id: str) -> FriendshipInDB:
+        """
+        位置情報共有リクエストを承認
+
+        Args:
+            user_id: 承認するユーザーID（リクエスト受信者＝位置を見られる人）
+            request_id: リクエストID
+
+        Returns:
+            更新されたフレンド関係
+
+        Raises:
+            ValueError: リクエストが見つからない、権限がない場合
+        """
+        request_ref = self.db.collection("location_share_requests").document(request_id)
+        request_doc = request_ref.get()
+
+        if not request_doc.exists:
+            raise ValueError("リクエストが見つかりません")
+
+        request_data = request_doc.to_dict()
+
+        # リクエスト受信者かチェック
+        if request_data["target_id"] != user_id:
+            raise ValueError("このリクエストを承認する権限がありません")
+
+        # ステータスがpendingかチェック
+        if request_data["status"] != FriendRequestStatus.PENDING.value:
+            raise ValueError("このリクエストは既に処理済みです")
+
+        # リクエストステータスを更新
+        request_ref.update(
+            {"status": FriendRequestStatus.ACCEPTED.value, "responded_at": datetime.utcnow()}
+        )
+
+        # フレンド関係を更新（requesterがtargetの位置を見られるようにする）
+        friendship = await self.get_friendship(
+            request_data["requester_id"], request_data["target_id"]
+        )
+        if not friendship:
+            raise ValueError("フレンド関係が見つかりません")
+
+        friendship_ref = self.db.collection("friendships").document(friendship.friendship_id)
+        friendship_ref.update({"can_see_friend_location": True, "updated_at": datetime.utcnow()})
+
+        # 更新後のフレンド関係を取得して返す
+        updated_doc = friendship_ref.get()
+        return FriendshipInDB(**updated_doc.to_dict())
+
+    async def reject_location_share_request(self, user_id: str, request_id: str) -> None:
+        """
+        位置情報共有リクエストを拒否
+
+        Args:
+            user_id: 拒否するユーザーID（リクエスト受信者）
+            request_id: リクエストID
+
+        Raises:
+            ValueError: リクエストが見つからない、権限がない場合
+        """
+        request_ref = self.db.collection("location_share_requests").document(request_id)
+        request_doc = request_ref.get()
+
+        if not request_doc.exists:
+            raise ValueError("リクエストが見つかりません")
+
+        request_data = request_doc.to_dict()
+
+        # リクエスト受信者かチェック
+        if request_data["target_id"] != user_id:
+            raise ValueError("このリクエストを拒否する権限がありません")
+
+        # ステータスがpendingかチェック
+        if request_data["status"] != FriendRequestStatus.PENDING.value:
+            raise ValueError("このリクエストは既に処理済みです")
+
+        # リクエストステータスを更新
+        request_ref.update(
+            {"status": FriendRequestStatus.REJECTED.value, "responded_at": datetime.utcnow()}
+        )
+
+    async def revoke_location_share(self, user_id: str, viewer_id: str) -> None:
+        """
+        位置情報共有を停止する
+
+        自分の位置情報を相手に見せないようにします。
+        相手の画面では、このユーザーの位置ステータスが表示されなくなります。
+
+        Args:
+            user_id: 共有を停止する人（位置を見られている人）
+            viewer_id: 共有を停止される人（位置を見ている人）
+
+        Raises:
+            ValueError: フレンド関係が見つからない、既に共有していない場合
+        """
+        # viewer_id -> user_id のフレンド関係を取得
+        # （viewer_id が user_id の位置を見る権限）
+        friendship = await self.get_friendship(viewer_id, user_id)
+        if not friendship:
+            raise ValueError("フレンド関係が見つかりません")
+
+        # 既に共有していない場合
+        if not friendship.can_see_friend_location:
+            raise ValueError("既に位置情報共有は停止されています")
+
+        # can_see_friend_location を false にする
+        friendship_ref = self.db.collection("friendships").document(friendship.friendship_id)
+        friendship_ref.update({"can_see_friend_location": False, "updated_at": datetime.utcnow()})

@@ -8,7 +8,7 @@ friendships コレクション:
     "friendship_id": "auto-generated",
     "user_id": "uid1",  # フレンド関係の一方のユーザー
     "friend_id": "uid2",  # フレンド関係のもう一方のユーザー
-    "trust_level": 3,  # 1-5の信頼レベル (5が最も信頼度が高い)
+    "can_see_friend_location": false,  # uid1がuid2の位置を見られるか
     "nickname": "親友の太郎",  # オプション：ニックネーム
     "created_at": "2024-01-01T00:00:00Z",
     "updated_at": "2024-01-01T00:00:00Z",
@@ -26,12 +26,20 @@ friend_requests コレクション:
     "responded_at": "2024-01-01T00:00:00Z"  # 承認/拒否された日時
 }
 
-信頼レベル:
-- Level 1: 知り合い (位置ステータスのみ共有)
-- Level 2: 友達 (メッセージ可能)
-- Level 3: 仲良し (過去の位置履歴も共有)
-- Level 4: 親しい友達 (カスタム場所も共有)
-- Level 5: 最も親しい友達 (near-miss検出有効、住所変更通知)
+location_share_requests コレクション:
+{
+    "request_id": "auto-generated",
+    "requester_id": "uid1",  # 「相手の位置を見たい」人
+    "target_id": "uid2",     # 「位置を見られる」人
+    "status": "pending",  # pending, accepted, rejected
+    "created_at": "2024-01-01T00:00:00Z",
+    "responded_at": null
+}
+
+フレンド機能の仕様:
+- フレンド承認時点でチャット機能が使える
+- 位置情報共有は別途の許可制（一方的な共有も可能）
+- Aが「Bの位置を見たい」→ リクエスト → Bが許可 → AはBの位置を見られる
 """
 
 from datetime import datetime
@@ -57,7 +65,10 @@ class FriendshipStatus(str, Enum):
 
 
 class TrustLevel(int, Enum):
-    """信頼レベル (1-5)"""
+    """
+    信頼レベル (1-5) - 後方互換性のため残すが、新仕様では使用しない
+    新仕様では位置情報共有は別途の許可制
+    """
 
     ACQUAINTANCE = 1  # 知り合い
     FRIEND = 2  # 友達
@@ -102,8 +113,14 @@ class FriendshipBase(BaseModel):
 
     user_id: str
     friend_id: str
-    trust_level: TrustLevel = Field(default=TrustLevel.FRIEND, ge=1, le=5)
+    can_see_friend_location: bool = Field(
+        default=False, description="このユーザーがフレンドの位置を見られるか"
+    )
     nickname: Optional[str] = Field(None, max_length=50, description="フレンドに付けるニックネーム")
+    # 後方互換性のため残すが、新仕様では使用しない
+    trust_level: Optional[TrustLevel] = Field(
+        default=TrustLevel.FRIEND, ge=1, le=5, description="旧仕様の信頼レベル（非推奨）"
+    )
 
 
 class FriendshipInDB(FriendshipBase):
@@ -122,10 +139,14 @@ class FriendshipResponse(BaseModel):
 
     friendship_id: str
     friend_id: str
-    trust_level: TrustLevel
+    can_see_friend_location: bool = Field(
+        default=False, description="このユーザーがフレンドの位置を見られるか"
+    )
     nickname: Optional[str] = None
     status: FriendshipStatus
     created_at: datetime
+    # 後方互換性のため残す
+    trust_level: Optional[TrustLevel] = None
 
     # フレンドのユーザー情報（JOIN用）
     friend_display_name: Optional[str] = None
@@ -138,8 +159,14 @@ class FriendshipResponse(BaseModel):
 class FriendshipUpdate(BaseModel):
     """フレンド関係の更新"""
 
-    trust_level: Optional[TrustLevel] = Field(None, ge=1, le=5, description="信頼レベル")
+    can_see_friend_location: Optional[bool] = Field(
+        None, description="このユーザーがフレンドの位置を見られるか"
+    )
     nickname: Optional[str] = Field(None, max_length=50, description="ニックネーム")
+    # 後方互換性のため残す（非推奨）
+    trust_level: Optional[TrustLevel] = Field(
+        None, ge=1, le=5, description="旧仕様の信頼レベル（非推奨）"
+    )
 
 
 class FriendListResponse(BaseModel):
@@ -154,3 +181,39 @@ class FriendRequestListResponse(BaseModel):
 
     requests: list[FriendRequestResponse]
     total: int
+
+
+class LocationShareRequestCreate(BaseModel):
+    """位置情報共有リクエスト送信"""
+
+    target_user_id: str = Field(..., description="位置を見たい相手のユーザーID")
+
+
+class LocationShareRequestResponse(BaseModel):
+    """位置情報共有リクエストのレスポンス"""
+
+    request_id: str
+    requester_id: str = Field(..., description="位置を見たい人")
+    target_id: str = Field(..., description="位置を見られる人")
+    status: FriendRequestStatus  # pending, accepted, rejected を再利用
+    created_at: datetime
+    responded_at: Optional[datetime] = None
+
+    # リクエスト送信者の情報（JOIN用）
+    requester_display_name: Optional[str] = None
+    requester_profile_image_url: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class LocationShareRequestListResponse(BaseModel):
+    """位置情報共有リクエスト一覧のレスポンス"""
+
+    requests: list[LocationShareRequestResponse]
+    total: int
+
+
+class LocationShareRequestAcceptReject(BaseModel):
+    """位置情報共有リクエスト承認/拒否"""
+
+    request_id: str = Field(..., description="リクエストID")
