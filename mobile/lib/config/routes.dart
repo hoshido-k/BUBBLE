@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/signup_screen.dart';
+import '../screens/auth/forgot_password_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../providers/auth_provider.dart';
 
 class AppRoutes {
   static const String login = '/';
   static const String signup = '/signup';
+  static const String forgotPassword = '/forgot-password';
   static const String home = '/home';
 
   static GoRouter createRouter(AuthProvider authProvider) {
@@ -17,14 +19,15 @@ class AppRoutes {
         final isAuthenticated = authProvider.isAuthenticated;
         final isOnLoginPage = state.matchedLocation == login;
         final isOnSignupPage = state.matchedLocation == signup;
+        final isOnForgotPasswordPage = state.matchedLocation == forgotPassword;
 
-        // If user is authenticated and on login/signup page, redirect to home
-        if (isAuthenticated && (isOnLoginPage || isOnSignupPage)) {
+        // If user is authenticated and on login/signup/forgot-password page, redirect to home
+        if (isAuthenticated && (isOnLoginPage || isOnSignupPage || isOnForgotPasswordPage)) {
           return home;
         }
 
-        // If user is not authenticated and not on login/signup page, redirect to login
-        if (!isAuthenticated && !isOnLoginPage && !isOnSignupPage) {
+        // If user is not authenticated and not on login/signup/forgot-password page, redirect to login
+        if (!isAuthenticated && !isOnLoginPage && !isOnSignupPage && !isOnForgotPasswordPage) {
           return login;
         }
 
@@ -42,6 +45,11 @@ class AppRoutes {
           path: signup,
           name: 'signup',
           builder: (context, state) => const SignupScreen(),
+        ),
+        GoRoute(
+          path: forgotPassword,
+          name: 'forgot-password',
+          builder: (context, state) => const ForgotPasswordScreen(),
         ),
         GoRoute(
           path: home,
