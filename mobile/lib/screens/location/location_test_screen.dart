@@ -43,14 +43,32 @@ class _LocationTestScreenState extends State<LocationTestScreen> {
       _errorMessage = null;
     });
 
-    final granted = await _locationService.requestLocationPermission();
+    try {
+      print('Requesting location permission...');
+      final granted = await _locationService.requestLocationPermission();
+      print('Permission granted: $granted');
 
-    setState(() {
-      _isLoading = false;
-      if (!granted) {
-        _errorMessage = '位置情報の権限が拒否されました';
-      }
-    });
+      setState(() {
+        _isLoading = false;
+        if (granted) {
+          _errorMessage = null;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('位置情報の権限が許可されました'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          _errorMessage = '位置情報の権限が拒否されました。設定アプリから手動で許可してください。';
+        }
+      });
+    } catch (e) {
+      print('Error requesting permission: $e');
+      setState(() {
+        _isLoading = false;
+        _errorMessage = '権限リクエストエラー: $e';
+      });
+    }
   }
 
   Future<void> _getCurrentLocation() async {
@@ -164,6 +182,28 @@ class _LocationTestScreenState extends State<LocationTestScreen> {
                   ElevatedButton(
                     onPressed: _isLoading ? null : _requestPermission,
                     child: const Text('位置情報権限をリクエスト'),
+                  ),
+                  const SizedBox(height: 8),
+                  OutlinedButton(
+                    onPressed: _isLoading
+                        ? null
+                        : () async {
+                            final hasPermission =
+                                await _locationService.hasLocationPermission();
+                            if (!mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  hasPermission
+                                      ? '位置情報権限: 許可されています'
+                                      : '位置情報権限: 拒否されています',
+                                ),
+                                backgroundColor:
+                                    hasPermission ? Colors.green : Colors.red,
+                              ),
+                            );
+                          },
+                    child: const Text('現在の権限ステータスを確認'),
                   ),
                 ],
               ),
