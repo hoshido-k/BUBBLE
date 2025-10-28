@@ -1,643 +1,330 @@
-# 🫧 BUBBLE（Be Unseen, Be Loved, Everywhere）
+# Generic API Template
 
-> 見えないけど、ちゃんとそこにいる
-
-信頼とプライバシーを両立させた、新しいコミュニケーションアプリ
+A reusable FastAPI backend template with Firebase integration, providing authentication, messaging, friend management, and push notifications out of the box.
 
 ---
 
-## 📖 開発目的・背景
+## 🎯 Overview
 
-### 解決したい課題
+This is a production-ready FastAPI backend that can be used as a foundation for various applications. It includes common features like user authentication, real-time messaging, friend relationships, and push notifications.
 
-現代のメッセージアプリは「即レス文化」と「常時接続」を前提としており、多くの人が以下のような問題を抱えています：
+### Key Features
 
-- **通知疲れ**: メッセージが来るたびに精神的な負担を感じる
-- **プライバシーの侵害**: LINEは非表示にしても新着メッセージで表示されてしまう
-- **位置情報の不安**: Zenlyのような完全な位置共有はプライバシー面で問題
-- **信頼性の欠如**: 位置情報を偽装できてしまい、相互不信の原因に
-- **健全な境界線の欠如**: 仕事とプライベート、自分の時間が守れない
-
-### このアプリが目指すもの
-
-BUBBLEは、**健全な境界線を保ちながら、大切な人とのつながりを深める**ことを目的としたメッセージアプリです。
-
-**3つの核となる価値観**：
-1. **自分のペースを守る** - メッセージは自分が確認したいときに確認できる
-2. **信頼を可視化する** - 嘘をつけない設計で、お互いの信頼を守る
-3. **繋がりを楽しむ** - 監視ではなく、偶然の出会いや思い出を共有する
+- **Authentication**: Firebase Authentication integration with JWT tokens
+- **User Management**: User profiles, settings, and account management
+- **Messaging**: Real-time messaging system with read receipts
+- **Friend System**: Friend requests, acceptance, and relationship management
+- **Push Notifications**: Firebase Cloud Messaging integration
+- **Security**: Password hashing, JWT validation, encryption utilities
 
 ---
 
-## 🎯 ターゲットユーザー
+## 🛠️ Tech Stack
 
-### プライマリターゲット
-- **カップル**: お互いを信頼し、適度な距離感を保ちたい20-30代
-- **親子**: 子供の安全を見守りたいが、過度な監視は避けたい親
-- **親しい友人グループ**: 気軽に繋がりたいが、常に監視されたくない人々
-
-### 解決するペイン
-- 「今どこ？」と何度も聞かれる煩わしさ
-- LINEの即レス文化による精神的負担
-- 完全な位置共有によるプライバシー不安
-- 通知に支配される生活
-- パートナーや家族からの過度な監視
+- **FastAPI** - Modern Python web framework
+- **Firebase** - Authentication, Firestore database, Cloud Messaging
+- **uv** - Fast Python package manager
+- **Pydantic** - Data validation and settings management
+- **Python 3.11+** - Modern Python features
 
 ---
 
-## ✨ 主要機能
+## 📂 Project Structure
 
-### 🔐 コア機能
-
-#### 1. メッセージ非表示機能
-
-**課題**: LINEは非表示にしても新着メッセージが来ると表示されてしまう
-
-**解決策**:
-- ユーザーが「確認する」ボタンを押すまで、絶対にメッセージを表示しない
-- 未読カウントのみ表示（送信者名や内容は非表示）
-- 自分のタイミングで精神的な準備をしてからメッセージを開ける
-
-**ユースケース**:
 ```
-- 仕事終わりまでプライベートの連絡を見たくない
-- 休日は完全にデジタルデトックスしたい
-- ストレスのある人からのメッセージを見る心の準備をしてから開きたい
-```
-
----
-
-#### 2. 位置ステータス表示
-
-**課題**: 
-- Zenlyは位置情報が丸見えでプライバシーに問題
-- でも「今どこにいるか」の大まかな状態は共有したい
-
-**解決策**:
-- 正確な位置ではなく、**ステータス**で状態を共有
-- ユーザーが事前登録した場所（自宅、職場など）にいると、対応する色のマークが表示される
-
-**ステータスの種類**:
-
-| ステータス | 表示 | 説明 |
-|-----------|------|------|
-| 🏠 自宅 | 緑色マーク | 登録した自宅の範囲内（例：200m以内） |
-| 🏢 職場 | 青色マーク | 登録した職場の範囲内（例：500m以内） |
-| 🚶 移動中 | 黄色マーク | 登録地点外で移動を検知（速度5km/h以上） |
-| 📍 カスタム | 紫色マーク | ジム、カフェなど任意の場所 |
-| ❓ 不明 | グレーマーク | 位置情報オフまたは未登録エリア |
-
-**特徴**:
-- 正確な住所や座標は一切表示されない
-- 相手には「状態」のみが伝わる
-- プライバシーを守りながら安心感を提供
-
-**ユースケース**:
-```
-- パートナーが無事に帰宅したか確認できる（でも詳細な位置は見えない）
-- 友達が「職場」ステータスなら、今は連絡を控える
-- 「移動中」なら返信が遅くても気にならない
+backend/
+├── app/
+│   ├── main.py                  # FastAPI app entry point
+│   ├── config.py                # Configuration settings
+│   ├── api/
+│   │   ├── dependencies.py      # Shared dependencies
+│   │   └── v1/
+│   │       ├── auth.py          # Authentication endpoints
+│   │       ├── users.py         # User management endpoints
+│   │       ├── messages.py      # Messaging endpoints
+│   │       ├── friends.py       # Friend management endpoints
+│   │       └── notifications.py # Push notification endpoints
+│   ├── core/
+│   │   └── firebase.py          # Firebase initialization
+│   ├── schemas/
+│   │   ├── auth.py              # Authentication schemas
+│   │   ├── user.py              # User schemas
+│   │   ├── message.py           # Message schemas
+│   │   ├── friend.py            # Friend schemas
+│   │   └── notification.py      # Notification schemas
+│   ├── services/
+│   │   ├── auth.py              # Authentication business logic
+│   │   ├── users.py             # User management logic
+│   │   ├── messages.py          # Messaging logic
+│   │   ├── friends.py           # Friend management logic
+│   │   └── notifications.py     # Notification logic
+│   └── utils/
+│       ├── jwt.py               # JWT token utilities
+│       ├── security.py          # Security helpers
+│       └── encryption.py        # Encryption utilities
+├── tests/                       # Unit and integration tests
+├── pyproject.toml               # Python dependencies
+├── uv.lock                      # Dependency lock file
+└── .env.example                 # Environment variables template
 ```
 
 ---
 
-#### 3. 住所変更制限（信頼の担保）
+## 🚀 Quick Start
 
-**課題**: 
-- ステータスを偽装して浮気や嘘をつくことができてしまう
-- 位置情報アプリの信頼性が低い
+### Prerequisites
 
-**解決策**:
-- 登録住所（自宅・職場）は**90日間変更不可**
-- やむを得ない場合（引っ越し・転職）は特別申請が必要
-- 変更履歴は親しいフレンドに通知される
+- **Python 3.11+**: [Download](https://www.python.org/)
+- **uv**: Python package manager
+  ```bash
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+  ```
+- **Firebase Project**: Create at [Firebase Console](https://console.firebase.google.com/)
 
-**この仕様の意図**:
-- 「嘘をつけない設計」で相互信頼を構築
-- 監視ではなく、誠実さのプラットフォーム
-- 正当な理由での変更は可能（透明性の確保）
-
-**緊急時の対応**:
-```
-特別変更申請のフロー：
-1. ユーザーが「特別変更を申請」をタップ
-2. 理由を選択（引っ越し、転職、その他）
-3. 必要に応じて証明書類をアップロード
-4. 運営が24-48時間以内に審査
-5. 承認されたら変更可能
-```
-
-**ユースケース**:
-```
-- カップル間で「実は別の場所にいた」という不信感を防ぐ
-- 親子間で「ちゃんと学校に行ってる」という安心感
-- 引っ越しや転職など正当な理由での変更は可能
-```
-
----
-
-#### 4. 不正アクセス検知
-
-**課題**:
-- パートナーや親が勝手にスマホを見る
-- 気づかないうちにメッセージを読まれている
-
-**解決策**:
-- 「監視モード」をオンにすると、アプリ起動時に毎回生体認証を要求
-- バックグラウンドから復帰時も再認証を要求
-- 認証失敗は詳細に記録され、本人に通知される
-
-**記録される情報**:
-- 認証失敗の日時
-- おおまかな位置情報（市区町村レベル）
-- 試行回数
-- デバイス情報
-
-**セキュリティレベル**:
-```
-レベル1（基本）：
-- アプリ起動時のみ認証
-
-レベル2（標準）：
-- バックグラウンドから復帰時も認証
-- 認証失敗を通知
-
-レベル3（厳重）：
-- 5分以上経過後は必ず再認証
-- 3回失敗でアプリロック
-- フロントカメラで撮影（オプション）
-```
-
-**ユースケース**:
-```
-- パートナーが勝手にスマホを見ようとした履歴が残る
-- 子供が親のスマホを触った記録
-- 盗難・紛失時の不正利用検知
-```
-
----
-
-### 🎁 追加機能
-
-#### 5. サプライズニアミス通知
-
-**コンセプト**:
-- リアルタイムではない位置共有
-- 過去の位置履歴から「実はあの時、近くにいた」を発見
-- Zenlyの楽しさをプライバシー配慮で実現
-
-**仕組み**:
-- 位置情報は暗号化してバックグラウンドで記録（7日間のみ保持）
-- 毎日深夜にバッチ処理で「親しいフレンド」とのニアミスを検出
-- 翌朝に「昨日の15時頃、実は○○さんが近くにいました！」と通知
-
-**検出条件**:
-- 半径50m以内
-- 時間差30分以内
-- 親しいフレンド設定している相手のみ
-
-**プライバシー配慮**:
-- 正確な位置は表示しない（「渋谷駅周辺」など大まかな範囲のみ）
-- リアルタイムではないのでストーカー行為に使えない
-- いつでもオフにできる
-- 位置履歴は暗号化され、ニアミス検出にのみ使用
-
-**ユースケース**:
-```
-- 「そういえばあの時、同じカフェにいたかも！」という会話のきっかけ
-- 偶然の再会の感動
-- 友人との思い出の再発見
-```
-
----
-
-#### 6. ステータス別通知制御
-
-ユーザーの位置ステータスに応じて、自動的に通知設定を変更：
-
-```
-🏠 自宅：すべての通知を受信
-🏢 職場：緊急連絡以外は非表示
-🚶 移動中：通知音を小さく
-❓ 不明：完全プライベートモード（通知オフ）
-```
-
----
-
-#### 7. 送信者別・時間帯別ルール設定
-
-特定の人からのメッセージを特定の時間帯のみ受信：
-
-```
-例：
-- 上司からのメッセージは平日19時以降は非表示
-- 親からのメッセージは就寝時間（22時〜7時）は緊急時のみ
-- 友人グループは週末のみ受信
-```
-
----
-
-#### 8. モード切り替え機能
-
-シーンごとに異なる自分を使い分け：
-
-```
-🏢 仕事モード
-- 仕事関連の連絡先のみ表示
-- プロフィール画像・表示名を変更
-- 通知設定を業務用に
-
-👨‍👩‍👧 家族モード
-- 家族との連絡を優先
-- 位置情報を詳細に共有
-
-🎉 友達モード
-- カジュアルなコミュニケーション
-- ニアミス通知を有効に
-
-🔒 完全プライベート
-- すべての通知オフ
-- ステータスを「不明」に固定
-```
-
-位置情報や時間帯で自動切り替えも可能。
-
----
-
-#### 9. 信頼度レベルシステム
-
-相手との関係性を段階化（レベル1〜5）：
-
-```
-レベル1（初対面）：
-- テキストメッセージのみ
-- 既読表示なし
-- 位置ステータス非表示
-
-レベル3（友人）：
-- 画像送信可能
-- 既読表示あり
-- 基本ステータス表示
-
-レベル5（親友・家族）：
-- すべての機能開放
-- 詳細ステータス共有
-- ニアミス通知有効
-- 緊急時の強制通知
-```
-
-やり取りの頻度や内容から自動的にレベルが調整される。
-
----
-
-#### 10. AI ペルソナチャット機能（将来構想）
-
-**コンセプト**:
-- ユーザーが設定した人物像（ペルソナ）を持つ生成AIと対話できる
-- 悩み相談、雑談、アイデア出しなど、気軽に話せる存在を提供
-- プライバシーを守りながら、孤独感を軽減
-
-**想定される機能**:
-- カスタマイズ可能なペルソナ設定（性格、話し方、専門分野など）
-- 会話履歴の保存と学習（ローカルまたは暗号化保存）
-- 複数のペルソナを作成・切り替え可能
-- プライバシー重視（会話内容は第三者に共有されない）
-
-**ユースケース**:
-```
-- 夜中に誰かと話したいけど、友達を起こしたくない
-- 恋愛相談を誰にも知られずにしたい
-- 新しいアイデアをブレストする相手が欲しい
-- 趣味の話を気兼ねなく共有したい
-- 仮想的な「メンター」や「親友」として活用
-```
-
-**プライバシー配慮**:
-- 会話データは暗号化して保存
-- オプトインでのみ利用可能
-- いつでも会話履歴を削除可能
-- 外部サービスへのデータ送信は最小限に
-
----
-
-## 🔒 プライバシーとセキュリティ
-
-### データ保護方針
-
-1. **位置情報の暗号化**: すべての位置データは暗号化して保存
-2. **最小限の保存期間**: 位置履歴は最長30日間のみ保持
-3. **透明性**: 何が記録され、誰と共有されるかを常に明示
-4. **ユーザーコントロール**: いつでもデータ削除・機能オフが可能
-5. **第三者提供なし**: 広告目的での位置情報利用は一切なし
-
-### セキュリティ対策
-
-- メッセージのエンドツーエンド暗号化
-- 二要素認証対応
-- 生体認証の活用
-- 定期的なセキュリティ監査
-- 不正アクセス検知とログ記録
-
----
-
-## 💡 他の類似アプリとの違い
-
-### 主要競合との比較
-
-| 機能 | LINE | WhatsApp | Zenly | Life360 | **BUBBLE** |
-|------|------|----------|-------|---------|-----------|
-| **メッセージング** | ◎ | ◎ | × | × | ◎ |
-| **位置共有** | △（一時的） | △（一時的） | ◎（完全） | ◎（完全） | ○（ステータス） |
-| **プライバシー配慮** | △ | ○ | △ | △ | **◎** |
-| **メッセージ非表示** | × | × | - | - | **◎** |
-| **ステータス共有** | × | × | × | × | **◎** |
-| **信頼性担保** | × | × | × | × | **◎** |
-| **不正アクセス検知** | × | × | × | × | **◎** |
-| **ニアミス通知** | × | × | △（リアルタイム） | × | **◎（遅延型）** |
-
-### 各アプリとの差別化ポイント
-
-#### vs LINE
-**LINEの問題点**:
-- 非表示にしても新着メッセージで表示される
-- 即レス文化による精神的負担
-- 位置共有機能が弱い
-
-**BUBBLEの優位性**:
-- 完全なメッセージ非表示機能
-- 自分のペースでコミュニケーション
-- ステータスベースの位置共有
-
----
-
-#### vs WhatsApp
-**WhatsAppの問題点**:
-- プライバシーは強いが、位置共有は一時的のみ
-- グループ通知の制御が弱い
-- 日本での普及率が低い
-
-**BUBBLEの優位性**:
-- 継続的なステータス共有
-- 詳細な通知制御
-- 日本市場向けの機能設計
-
----
-
-#### vs Zenly（サービス終了）
-**Zenlyの問題点**:
-- 位置情報が丸見えでプライバシーリスク
-- ストーカー被害の懸念
-- 常時監視されている感覚
-
-**BUBBLEの優位性**:
-- 正確な位置ではなくステータスのみ共有
-- リアルタイムではなく遅延型のニアミス通知
-- プライバシーと繋がりの両立
-
-**Zenlyユーザーへの訴求**:
-「Zenlyが好きだったけど、プライバシーが気になっていた」というユーザーに最適な代替案。
-
----
-
-#### vs Life360
-**Life360の問題点**:
-- 完全な位置追跡で監視感が強い
-- 家族向けに特化しすぎている
-- メッセージ機能が弱い
-
-**BUBBLEの優位性**:
-- ステータスベースで監視感が少ない
-- カップル、友人にも対応
-- メッセージング機能が充実
-
----
-
-### BUBBLEの独自性
-
-**唯一無二の機能**:
-1. **メッセージ非表示機能** - 他のどのアプリにもない
-2. **住所変更制限** - 信頼を担保する独自の仕組み
-3. **ステータスベース位置共有** - プライバシーと透明性の両立
-4. **不正アクセス検知** - セキュリティ意識の高い設計
-5. **遅延型ニアミス通知** - リアルタイムではない安全な繋がり
-
-**哲学の違い**:
-- LINE/WhatsApp: 「常に繋がる」
-- Zenly/Life360: 「常に見守る」
-- **BUBBLE**: 「見えないけど、ちゃんとそこにいる」
-
----
-
-## 🚀 開発ロードマップ
-
-### フェーズ1: MVP開発（4-6週間）
-- [ ] ユーザー登録・認証システム
-- [ ] 基本チャット機能（1対1）
-- [ ] メッセージ非表示機能
-- [ ] 位置ステータス表示（自宅・職場・移動中・不明）
-- [ ] 住所登録と90日変更制限
-- [ ] 不正アクセス検知（基本版）
-
-### フェーズ2: 差別化機能（4-6週間）
-- [ ] 親しいフレンド機能
-- [ ] ステータス別通知制御
-- [ ] 位置履歴の暗号化記録
-- [ ] 送信者別・時間帯別ルール設定
-- [ ] グループチャット機能
-
-### フェーズ3: 追加機能（2-3ヶ月）
-- [ ] サプライズニアミス通知
-- [ ] モード切り替え機能
-- [ ] 信頼度レベルシステム
-- [ ] カスタムステータス（カフェ、ジムなど）
-- [ ] 記憶のアーカイブ機能
-
-### フェーズ4: リリース準備（1ヶ月）
-- [ ] ベータテスト実施
-- [ ] パフォーマンス最適化
-- [ ] App Store / Google Play申請
-- [ ] プライバシーポリシー・利用規約整備
-- [ ] マーケティング素材作成
-
-### フェーズ5: 将来的な拡張機能
-- [ ] AIペルソナチャット機能
-  - カスタマイズ可能な人物像の設定
-  - プライバシー重視の会話システム
-  - 暗号化された会話履歴管理
-- [ ] 多言語対応
-- [ ] ウェアラブルデバイス連携
-- [ ] 音声メッセージ・通話機能
-
----
-
-## 🌟 このアプリが目指す世界
-
-「常に繋がっている」ことが当たり前になった現代で、BUBBLEは**「適度な距離感」と「相互信頼」**を大切にするコミュニケーションの新しい形を提案します。
-
-**3つの約束**:
-- 監視ではなく、**見守り**
-- 束縛ではなく、**信頼**
-- 即レスではなく、**自分のペース**
-
-大切な人との関係をより健全で、より深いものにするためのツール。それがBUBBLEです。
-
----
-
-## 🛠️ 技術スタック
-
-### バックエンド
-- **FastAPI** (Python): RESTful API
-- **Firebase**:
-  - Firebase Authentication: ユーザー認証
-  - Firestore: リアルタイムデータベース
-  - Firebase Cloud Messaging: プッシュ通知
-  - Firebase Storage: ファイル保存
-- **Google Cloud Run**: サーバーレスホスティング
-- **uv**: 高速パッケージマネージャー
-
-### フロントエンド
-- **React Native (Expo)**: モバイルアプリ (iOS/Android)
-- **Next.js 14**: Webアプリ（管理画面）
-- **TypeScript**: 型安全性
-- **Zustand**: 状態管理
-
-### インフラ
-- **Firebase**: インフラストラクチャ
-- **Google Cloud Platform**: バックエンドホスティング
-- **Vercel**: Webアプリホスティング（推奨）
-
----
-
-## 📂 プロジェクト構成
-
-```
-BUBBLE/
-├── backend/              # FastAPI バックエンド（Python 3.11+）
-├── mobile/               # React Native モバイルアプリ（Expo）
-├── web/                  # Next.js Webアプリ（管理画面）
-├── shared/               # 共通コード（型定義、定数など）
-├── firebase/             # Firebaseセキュリティルールと設定
-└── docs/                 # プロジェクトドキュメント
-```
-
-詳細なディレクトリ構成は各フォルダのREADMEを参照してください。
-
----
-
-## 🚀 クイックスタート
-
-### 前提条件
-- **Node.js 18以上**: [公式サイト](https://nodejs.org/)からインストール
-- **Python 3.11以上**: [公式サイト](https://www.python.org/)からインストール
-- **uv (Pythonパッケージマネージャー)**: `curl -LsSf https://astral.sh/uv/install.sh | sh`
-- **Firebase プロジェクト**: [Firebase Console](https://console.firebase.google.com/)で作成
-
-### 1. リポジトリのクローン
+### 1. Clone or Use This Template
 
 ```bash
-git clone https://github.com/yourusername/bubble.git
-cd bubble
+# If using as a template for a new project
+git clone https://github.com/yourusername/backend-api-template.git my-new-project
+cd my-new-project/backend
 ```
 
-### 2. Firebase認証情報の設定
+### 2. Firebase Setup
 
-1. Firebase Consoleでサービスアカウントキーを生成
-2. JSONファイルを `backend/serviceAccountKey.json` として保存
-3. プロジェクトIDをメモしておく
+1. Go to [Firebase Console](https://console.firebase.google.com/)
+2. Create a new project (or use existing)
+3. Generate a service account key:
+   - Project Settings → Service Accounts → Generate New Private Key
+4. Save the JSON file as `serviceAccountKey.json` in the `backend/` directory
+5. Note your Firebase Project ID
 
-### 3. バックエンドのセットアップ
+### 3. Install Dependencies
 
 ```bash
 cd backend
-
-# 依存関係のインストール
 uv sync
+```
 
-# 環境変数ファイルの作成
+### 4. Configure Environment Variables
+
+```bash
 cp .env.example .env
+```
 
-# .envファイルを編集（必須項目）
-# - FIREBASE_PROJECT_ID: FirebaseプロジェクトID
-# - FIREBASE_CREDENTIALS_PATH: ./serviceAccountKey.json
-# - SECRET_KEY: ランダムな文字列（例: openssl rand -hex 32）
-# - ENCRYPTION_KEY: ランダムな文字列（例: openssl rand -hex 32）
+Edit `.env` with your settings:
 
-# 開発サーバー起動（ポート8000）
+```env
+# Application
+APP_NAME=Generic API
+DEBUG=False
+
+# Firebase
+FIREBASE_PROJECT_ID=your-project-id
+FIREBASE_CREDENTIALS_PATH=./serviceAccountKey.json
+
+# JWT
+SECRET_KEY=your-secret-key-here  # Generate with: openssl rand -hex 32
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+# Encryption
+ENCRYPTION_KEY=your-encryption-key  # Generate with: openssl rand -hex 32
+```
+
+### 5. Run Development Server
+
+```bash
 uv run uvicorn app.main:app --reload
 ```
 
-### 4. モバイルアプリのセットアップ
+The API will be available at `http://localhost:8000`
+
+- API Documentation: `http://localhost:8000/docs`
+- Alternative Docs: `http://localhost:8000/redoc`
+
+---
+
+## 📡 API Endpoints
+
+### Authentication (`/api/v1/auth`)
+- `POST /signup` - Register new user
+- `POST /login` - Login with email/password
+- `POST /refresh` - Refresh JWT token
+- `POST /logout` - Logout user
+
+### Users (`/api/v1/users`)
+- `GET /me` - Get current user profile
+- `PUT /me` - Update user profile
+- `GET /{user_id}` - Get user by ID
+- `DELETE /me` - Delete account
+
+### Messages (`/api/v1/messages`)
+- `POST /` - Send message
+- `GET /conversations` - List conversations
+- `GET /conversations/{user_id}` - Get messages with specific user
+- `PUT /{message_id}/read` - Mark message as read
+
+### Friends (`/api/v1/friends`)
+- `POST /request` - Send friend request
+- `POST /accept` - Accept friend request
+- `POST /reject` - Reject friend request
+- `GET /list` - List all friends
+- `DELETE /{friend_id}` - Remove friend
+
+### Notifications (`/api/v1/notifications`)
+- `POST /register` - Register FCM token
+- `POST /send` - Send push notification
+- `GET /` - Get notification history
+
+---
+
+## 🔧 Development
+
+### Running Tests
 
 ```bash
-cd mobile
-
-# 依存関係のインストール
-npm install
-
-# 環境変数ファイルの作成
-cp .env.example .env
-
-# .envファイルを編集してFirebase設定とAPIエンドポイントを設定
-
-# Expo開発サーバー起動
-npm start
+cd backend
+uv run pytest
 ```
 
-### 5. Webアプリのセットアップ（オプション）
+### Code Formatting
 
 ```bash
-cd web
+# Format code
+uv run ruff format .
 
-# 依存関係のインストール
-npm install
-
-# 環境変数ファイルの作成
-cp .env.example .env.local
-
-# .env.localファイルを編集
-
-# 開発サーバー起動（ポート3000）
-npm run dev
+# Check linting
+uv run ruff check .
 ```
 
-### 6. トラブルシューティング
+### Adding New Features
 
-**uvが見つからない場合:**
+1. **Create new API endpoint** in `backend/app/api/v1/your_feature.py`
+2. **Define schemas** in `backend/app/schemas/your_feature.py`
+3. **Implement business logic** in `backend/app/services/your_feature.py`
+4. **Register router** in `backend/app/main.py`:
+   ```python
+   from app.api.v1 import your_feature
+   app.include_router(your_feature.router, prefix="/api/v1/your_feature", tags=["Your Feature"])
+   ```
+
+---
+
+## 🔐 Security
+
+### Best Practices
+
+- All passwords are hashed using bcrypt
+- JWT tokens expire after 30 minutes (configurable)
+- Sensitive data can be encrypted using the encryption utility
+- Firebase handles authentication securely
+- CORS is set to `*` for development - **restrict in production**
+
+### Production Checklist
+
+- [ ] Set `DEBUG=False` in `.env`
+- [ ] Configure CORS to specific origins
+- [ ] Use HTTPS for all communications
+- [ ] Rotate `SECRET_KEY` and `ENCRYPTION_KEY` regularly
+- [ ] Enable Firebase security rules
+- [ ] Set up monitoring and logging
+- [ ] Review and restrict API rate limits
+
+---
+
+## 🌐 Deployment
+
+### Using Docker (Recommended)
+
 ```bash
-# macOS/Linux
-curl -LsSf https://astral.sh/uv/install.sh | sh
+# Build image
+docker build -t my-api .
 
-# Windows
-powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+# Run container
+docker run -p 8000:8000 --env-file .env my-api
 ```
 
-**Pythonバージョンが古い場合:**
-```bash
-# macOS (Homebrew)
-brew install python@3.11
+### Using Cloud Run (Google Cloud)
 
-# Ubuntu/Debian
-sudo apt update && sudo apt install python3.11
+```bash
+gcloud run deploy my-api \
+  --source . \
+  --region us-central1 \
+  --allow-unauthenticated
 ```
 
-**Node.jsバージョンが古い場合:**
+### Using Railway/Render
+
+1. Connect your GitHub repository
+2. Set environment variables from `.env`
+3. Deploy automatically on push
+
+---
+
+## 📖 Usage Example
+
+### Using This Template for Your Project
+
+When starting a new project (e.g., "PopMatch"), you can use this template:
+
 ```bash
-# nvm (推奨)
-nvm install 18
-nvm use 18
+# Clone the template
+git clone https://github.com/yourusername/backend-api-template.git popmatch
+cd popmatch
+
+# Remove git history and start fresh
+rm -rf .git
+git init
+
+# Add your project-specific features
+# Example: Add new endpoints for your app
+# backend/app/api/v1/pops.py
+# backend/app/api/v1/map.py
+
+# Commit and push to your new repo
+git add .
+git commit -m "Initial commit from backend-api-template"
+git remote add origin https://github.com/yourusername/popmatch.git
+git push -u origin main
+```
+
+### Integrating with Claude Code
+
+When working with Claude Code on a new project, provide the context:
+
+```
+I'm building a new app called PopMatch. Please use this backend API template as a foundation:
+https://github.com/yourusername/backend-api-template
+
+The template already includes authentication, messaging, friends, and notifications.
+I need to add the following new features:
+- Pop creation and management API
+- Map-based search API
+- ...
 ```
 
 ---
 
-## 📚 ドキュメント
+## 🤝 Contributing
 
-- [バックエンドAPI仕様](./backend/README.md)
-- [モバイルアプリ開発ガイド](./mobile/README.md)
-- [Webアプリ開発ガイド](./web/README.md)
-- [データベース設計](./docs/database/)
-- [アーキテクチャ設計](./docs/architecture/)
+This is a template repository. Feel free to:
+- Fork and customize for your needs
+- Submit PRs for general improvements
+- Open issues for bugs or feature requests
 
 ---
 
-**最終更新**: 2025年10月26日
-**バージョン**: 1.0（構想段階）
+## 📝 License
+
+MIT License - Use freely for personal and commercial projects
+
+---
+
+## 🙏 Credits
+
+Built with FastAPI, Firebase, and modern Python best practices.
+
+---
+
+**Last Updated**: 2025-10-28
+**Version**: 1.0.0
