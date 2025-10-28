@@ -45,5 +45,15 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>BUBBLEは、フレンドに位置情報ステータス（自宅、職場、移動中など）を共有するために位置情報を使用します。</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>BUBBLEは、バックグラウンドでもフレンドに位置情報ステータスを共有するために位置情報を使用します。</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>BUBBLEは、バックグラウンドでもフレンドに位置情報ステータスを共有するために位置情報を使用します。</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
 </dict>
 </plist>

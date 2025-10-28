@@ -5,6 +5,7 @@ import '../screens/auth/signup_screen.dart';
 import '../screens/auth/forgot_password_screen.dart';
 import '../screens/main/main_tab_screen.dart';
 import '../screens/profile/profile_screen.dart';
+import '../screens/location/location_test_screen.dart';
 import '../providers/auth_provider.dart';
 
 class AppRoutes {
@@ -13,6 +14,7 @@ class AppRoutes {
   static const String forgotPassword = '/forgot-password';
   static const String home = '/home';
   static const String profile = '/profile';
+  static const String locationTest = '/location-test';
 
   static GoRouter createRouter(AuthProvider authProvider) {
     return GoRouter(
@@ -62,6 +64,11 @@ class AppRoutes {
           path: profile,
           name: 'profile',
           builder: (context, state) => const ProfileScreen(),
+        ),
+        GoRoute(
+          path: locationTest,
+          name: 'location-test',
+          builder: (context, state) => const LocationTestScreen(),
         ),
       ],
       errorBuilder: (context, state) => Scaffold(
