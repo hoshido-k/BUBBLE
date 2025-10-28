@@ -106,9 +106,11 @@ class AuthService {
       case 'email-already-in-use':
         return 'このメールアドレスは既に使用されています。';
       case 'user-not-found':
-        return 'ユーザーが見つかりません。';
+        return 'メールアドレスまたはパスワードが違います。';
       case 'wrong-password':
-        return 'パスワードが間違っています。';
+        return 'メールアドレスまたはパスワードが違います。';
+      case 'invalid-credential':
+        return 'メールアドレスまたはパスワードが違います。';
       case 'invalid-email':
         return 'メールアドレスの形式が正しくありません。';
       case 'user-disabled':
@@ -117,6 +119,8 @@ class AuthService {
         return 'リクエストが多すぎます。しばらく待ってから再試行してください。';
       case 'operation-not-allowed':
         return 'この操作は許可されていません。';
+      case 'network-request-failed':
+        return 'ネットワーク接続を確認してください。';
       default:
         return '認証エラーが発生しました: ${e.message}';
     }

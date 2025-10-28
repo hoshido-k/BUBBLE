@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -179,7 +180,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   // Sign up link
                   TextButton(
                     onPressed: () {
-                      Navigator.of(context).pushNamed('/signup');
+                      context.push('/signup');
                     },
                     child: const Text('アカウントをお持ちでない方はこちら'),
                   ),
@@ -187,12 +188,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   // Forgot password link
                   TextButton(
                     onPressed: () {
-                      // TODO: Implement forgot password
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('パスワードリセット機能は準備中です'),
-                        ),
-                      );
+                      context.push('/forgot-password');
                     },
                     child: const Text('パスワードをお忘れの方'),
                   ),
