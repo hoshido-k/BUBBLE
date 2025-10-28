@@ -3,7 +3,8 @@ import 'package:go_router/go_router.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/signup_screen.dart';
 import '../screens/auth/forgot_password_screen.dart';
-import '../screens/home/home_screen.dart';
+import '../screens/main/main_tab_screen.dart';
+import '../screens/profile/profile_screen.dart';
 import '../providers/auth_provider.dart';
 
 class AppRoutes {
@@ -11,6 +12,7 @@ class AppRoutes {
   static const String signup = '/signup';
   static const String forgotPassword = '/forgot-password';
   static const String home = '/home';
+  static const String profile = '/profile';
 
   static GoRouter createRouter(AuthProvider authProvider) {
     return GoRouter(
@@ -54,7 +56,12 @@ class AppRoutes {
         GoRoute(
           path: home,
           name: 'home',
-          builder: (context, state) => const HomeScreen(),
+          builder: (context, state) => const MainTabScreen(),
+        ),
+        GoRoute(
+          path: profile,
+          name: 'profile',
+          builder: (context, state) => const ProfileScreen(),
         ),
       ],
       errorBuilder: (context, state) => Scaffold(
