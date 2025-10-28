@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -204,6 +205,16 @@ class ProfileScreen extends StatelessWidget {
             subtitle: 'バージョン情報、利用規約',
             onTap: () {
               // TODO: Navigate to about screen
+            },
+          ),
+          const SizedBox(height: 8),
+
+          _buildSettingsCard(
+            icon: Icons.bug_report,
+            title: '位置情報テスト（開発用）',
+            subtitle: 'GPS機能の動作確認',
+            onTap: () {
+              context.push('/location-test');
             },
           ),
           const SizedBox(height: 32),
