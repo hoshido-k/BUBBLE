@@ -82,45 +82,25 @@ class _LocationTestScreenState extends State<LocationTestScreen> {
       Position? position;
 
       if (skipPermissionCheck) {
-        // For simulator testing - try multiple approaches
-        print('Attempting to get location without permission check...');
+        // For simulator: directly use mock data
+        print('Using mock data for simulator (permission issues)');
+        // Use mock data for simulator (Cupertino, CA)
+        position = Position(
+          latitude: 37.3317,
+          longitude: -122.0307,
+          timestamp: DateTime.now(),
+          accuracy: 5.0,
+          altitude: 0.0,
+          altitudeAccuracy: 0.0,
+          heading: 0.0,
+          headingAccuracy: 0.0,
+          speed: 0.0,
+          speedAccuracy: 0.0,
+        );
+        print('Mock position: ${position.latitude}, ${position.longitude}');
 
-        try {
-          // Try with timeout
-          position = await Geolocator.getCurrentPosition(
-            locationSettings: const LocationSettings(
-              accuracy: LocationAccuracy.high,
-              distanceFilter: 10,
-            ),
-          ).timeout(
-            const Duration(seconds: 5),
-            onTimeout: () {
-              print('Location request timed out');
-              throw TimeoutException('Location request timed out');
-            },
-          );
-        } catch (e) {
-          print('Geolocator failed: $e');
-          // Fallback: Use last known position
-          position = await Geolocator.getLastKnownPosition();
-          if (position == null) {
-            print('No last known position, using mock data for simulator');
-            // Use mock data for simulator (Cupertino, CA)
-            position = Position(
-              latitude: 37.3317,
-              longitude: -122.0307,
-              timestamp: DateTime.now(),
-              accuracy: 5.0,
-              altitude: 0.0,
-              altitudeAccuracy: 0.0,
-              heading: 0.0,
-              headingAccuracy: 0.0,
-              speed: 0.0,
-              speedAccuracy: 0.0,
-            );
-            print('Using mock position: ${position.latitude}, ${position.longitude}');
-          }
-        }
+        // Add a small delay to simulate API call
+        await Future.delayed(const Duration(milliseconds: 500));
       } else {
         position = await _locationService.getCurrentLocation();
       }
@@ -284,10 +264,17 @@ class _LocationTestScreenState extends State<LocationTestScreen> {
                 ? null
                 : () => _getCurrentLocation(skipPermissionCheck: true),
             icon: const Icon(Icons.bug_report),
-            label: const Text('現在地を取得（シミュレータ用・権限チェックなし）'),
+            label: const Text('モックデータを使用（シミュレータ用）'),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
+              foregroundColor: Colors.orange,
             ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            '※ シミュレータでは位置情報が取得できないため、\nCupertino, CAのモックデータを使用します',
+            style: TextStyle(fontSize: 12, color: Colors.grey),
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
 
