@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../services/location_service.dart';
@@ -81,14 +82,45 @@ class _LocationTestScreenState extends State<LocationTestScreen> {
       Position? position;
 
       if (skipPermissionCheck) {
-        // For simulator testing - skip permission check
+        // For simulator testing - try multiple approaches
         print('Attempting to get location without permission check...');
-        position = await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.high,
-            distanceFilter: 10,
-          ),
-        );
+
+        try {
+          // Try with timeout
+          position = await Geolocator.getCurrentPosition(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.high,
+              distanceFilter: 10,
+            ),
+          ).timeout(
+            const Duration(seconds: 5),
+            onTimeout: () {
+              print('Location request timed out');
+              throw TimeoutException('Location request timed out');
+            },
+          );
+        } catch (e) {
+          print('Geolocator failed: $e');
+          // Fallback: Use last known position
+          position = await Geolocator.getLastKnownPosition();
+          if (position == null) {
+            print('No last known position, using mock data for simulator');
+            // Use mock data for simulator (Cupertino, CA)
+            position = Position(
+              latitude: 37.3317,
+              longitude: -122.0307,
+              timestamp: DateTime.now(),
+              accuracy: 5.0,
+              altitude: 0.0,
+              altitudeAccuracy: 0.0,
+              heading: 0.0,
+              headingAccuracy: 0.0,
+              speed: 0.0,
+              speedAccuracy: 0.0,
+            );
+            print('Using mock position: ${position.latitude}, ${position.longitude}');
+          }
+        }
       } else {
         position = await _locationService.getCurrentLocation();
       }
