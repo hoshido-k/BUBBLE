@@ -71,21 +71,37 @@ class _LocationTestScreenState extends State<LocationTestScreen> {
     }
   }
 
-  Future<void> _getCurrentLocation() async {
+  Future<void> _getCurrentLocation({bool skipPermissionCheck = false}) async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
     try {
-      final position = await _locationService.getCurrentLocation();
+      Position? position;
+
+      if (skipPermissionCheck) {
+        // For simulator testing - skip permission check
+        print('Attempting to get location without permission check...');
+        position = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 10,
+          ),
+        );
+      } else {
+        position = await _locationService.getCurrentLocation();
+      }
 
       if (position != null) {
+        print('Got position: ${position.latitude}, ${position.longitude}');
+
         // Get address
         final address = await _locationService.getAddressFromCoordinates(
           position.latitude,
           position.longitude,
         );
+        print('Got address: $address');
 
         // Calculate status
         final status = _locationService.calculateLocationStatus(
@@ -93,6 +109,7 @@ class _LocationTestScreenState extends State<LocationTestScreen> {
           homeAddress: _homeAddress,
           workAddress: _workAddress,
         );
+        print('Calculated status: ${status.statusText}');
 
         setState(() {
           _currentPosition = position;
@@ -105,6 +122,7 @@ class _LocationTestScreenState extends State<LocationTestScreen> {
         });
       }
     } catch (e) {
+      print('Error getting location: $e');
       setState(() {
         _errorMessage = 'エラー: $e';
       });
@@ -223,6 +241,19 @@ class _LocationTestScreenState extends State<LocationTestScreen> {
                 : const Icon(Icons.my_location),
             label: const Text('現在地を取得'),
             style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // Simulator test button
+          OutlinedButton.icon(
+            onPressed: _isLoading
+                ? null
+                : () => _getCurrentLocation(skipPermissionCheck: true),
+            icon: const Icon(Icons.bug_report),
+            label: const Text('現在地を取得（シミュレータ用・権限チェックなし）'),
+            style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
           ),
